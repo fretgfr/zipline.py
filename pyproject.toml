@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zipline.py"
+version = "0.1.0"
+description = "An async wrapper for the Zipline api."
+readme = "README.md"
+authors = [{ name = "fretgfr", email = "fretgfr@sudomail.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["zipline", "api wrapper"]
+dependencies = [
+    "aiohttp>=3.7.4,<4"
+]
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+dev = ["black", "isort", "typing_extensions"]
+
+[project.urls]
+Homepage = "https://github.com/rdrescher909/zipline.py/"
+
+[tool.setuptools]
+packages = ["zipline"]
+
+[tool.black]
+line-length = 125
+
+[tool.isort]
+profile = "black"
+combine_as_imports = true
+combine_star = true
+line_length = 125

@@ -519,7 +519,7 @@ class Client:
 
     async def upload_file(
         self,
-        file: UploadFile,
+        file: FileUploadPayload,
         *,
         format: NameFormat = NameFormat.uuid,
         compression_percent: int = 0,
@@ -531,7 +531,7 @@ class Client:
         text: bool = False,
         override_name: Optional[str] = None,
         original_name: Optional[str] = None,
-    ) -> UploadResponse:
+    ) -> FileUploadResponse:
         """Uploads a File to zipline
 
         Parameters
@@ -601,7 +601,7 @@ class Client:
             status = resp.status
             if status == 200:
                 js = await resp.json()
-                return UploadResponse._from_data(js)
+                return FileUploadResponse._from_data(js)
 
             elif status == 400:
                 js = await resp.json()

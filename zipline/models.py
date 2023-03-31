@@ -10,7 +10,7 @@ import aiohttp
 
 from .errors import NotFound, UnhandledError
 
-__all__ = ("File", "User", "PartialInvite", "Invite", "Folder", "ShortenedURL", "UploadResponse", "UploadFile")
+__all__ = ("File", "User", "PartialInvite", "Invite", "Folder", "ShortenedURL", "FileUploadResponse", "FileUploadPayload")
 
 
 @dataclass(slots=True)
@@ -416,7 +416,7 @@ class ShortenedURL:
         raise UnhandledError(f"Code {status} unhandled in ShortenedURL.delete!")
 
 
-class UploadResponse(NamedTuple):
+class FileUploadResponse(NamedTuple):
     """Represents a Zipline invite.
 
     Fields
@@ -434,7 +434,7 @@ class UploadResponse(NamedTuple):
     removed_gps: Optional[bool]
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any]) -> UploadResponse:
+    def _from_data(cls, data: Dict[str, Any]) -> FileUploadResponse:
         expires_at = data.get("expiresAt")
         fields = {
             "file_urls": data["files"],
@@ -445,7 +445,7 @@ class UploadResponse(NamedTuple):
         return cls(**fields)
 
 
-class UploadFile:
+class FileUploadPayload:
     """Represents a File to upload to Zipline."""
 
     __slots__ = ("filename", "data", "mimetype")

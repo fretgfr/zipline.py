@@ -519,7 +519,7 @@ class Client:
 
     async def upload_file(
         self,
-        file: FileUploadPayload,
+        payload: FileUploadPayload,
         *,
         format: NameFormat = NameFormat.uuid,
         compression_percent: int = 0,
@@ -536,7 +536,7 @@ class Client:
 
         Parameters
         ----------
-        file : UploadFile
+        payload : UploadFile
             The file to upload.
         format : NameFormat, optional
             The format of the name to assign to the uploaded File, by default NameFormat.uuid
@@ -561,7 +561,7 @@ class Client:
 
         Returns
         -------
-        UploadResponse
+        FileUploadResponse
             The uploaded File
 
         Raises
@@ -595,7 +595,7 @@ class Client:
         }
 
         formdata = aiohttp.FormData()
-        formdata.add_field("file", file.data, filename=file.filename, content_type=file.mimetype)
+        formdata.add_field("file", payload.data, filename=payload.filename, content_type=payload.mimetype)
 
         async with self._session.post("/api/upload", headers=headers, data=formdata) as resp:
             status = resp.status

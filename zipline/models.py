@@ -111,7 +111,7 @@ class File:
         async with self._session.get(self.url) as resp:
             return await resp.read()
 
-    async def delete(self) -> File:
+    async def delete(self) -> None:
         """Delete this File.
 
         Returns
@@ -154,7 +154,7 @@ class File:
             The File could not be found.
         """
         data = {"id": self.id, "favorite": favorite}
-        async with self._session.patch("/api/user/files", data=data) as resp:
+        async with self._session.patch("/api/user/files", json=data) as resp:
             status = resp.status
             if status == 200:
                 js = await resp.json()
@@ -420,7 +420,7 @@ class ShortenedURL:
     def full_url(self) -> str:
         return f"{self._session._base_url}{self.url}"
 
-    async def delete(self) -> bool:
+    async def delete(self) -> None:
         """Deletes this ShortenedURL
 
         Returns
@@ -432,7 +432,7 @@ class ShortenedURL:
         async with self._session.delete("/api/user/urls", json=data) as resp:
             status = resp.status
             if status == 200:
-                return True
+                return
 
         raise UnhandledError(f"Code {status} unhandled in ShortenedURL.delete!")
 

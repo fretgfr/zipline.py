@@ -128,8 +128,7 @@ class File:
         async with self._session.delete("/api/user/files", json=data) as resp:
             status = resp.status
             if status == 200:
-                js = await resp.json()
-                return File._from_data(js, session=self._session)
+                return
             elif status == 404:
                 raise NotFound("404: The file could not be found.")
 

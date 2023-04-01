@@ -125,7 +125,7 @@ class File:
             The file could not be found.
         """
         data = {"id": self.id, "all": False}
-        async with self._session.delete("/api/user/files", data=data) as resp:
+        async with self._session.delete("/api/user/files", json=data) as resp:
             status = resp.status
             if status == 200:
                 js = await resp.json()

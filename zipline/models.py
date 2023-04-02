@@ -108,7 +108,7 @@ class File:
         bytes
             The data of the File
         """
-        async with self._session.get(self.url) as resp:
+        async with self._session.get(self.full_url) as resp:
             return await resp.read()
 
     async def delete(self) -> None:

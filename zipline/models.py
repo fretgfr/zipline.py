@@ -163,6 +163,10 @@ class File:
 
         raise UnhandledError(f"Code {status} unhandled in File.delete!")
 
+    @property
+    def full_url(self) -> str:
+        """Returns the full URL of this File."""
+        return f"{self._session}{self.url}"
 
 @dataclass(slots=True)
 class User:

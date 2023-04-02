@@ -166,7 +166,7 @@ class File:
     @property
     def full_url(self) -> str:
         """Returns the full URL of this File."""
-        return f"{self._session}{self.url}"
+        return f"{self._session._base_url}{self.url}"
 
 @dataclass(slots=True)
 class User:

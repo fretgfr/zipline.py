@@ -437,7 +437,7 @@ class ShortenedURL:
 
 
 class FileUploadResponse(NamedTuple):
-    """Represents a Zipline invite.
+    """Represents a response to a File upload.
 
     Fields
     --------

@@ -169,7 +169,7 @@ class Client:
         count : int, optional
             The number of invites to create, by default 1
         expires_at : Optional[datetime], optional
-            When the creates invite(s) should expire, by default None
+            When the created invite(s) should expire, by default None
 
         Returns
         -------
@@ -185,12 +185,12 @@ class Client:
         Forbidden
             You are not an administrator and cannot use this method.
         """
-        data = {"count": count, "expiresAt": expires_at.isoformat() if expires_at is not None else None}
+        data = {"count": count, "expiresAt": f"date={expires_at.isoformat()}" if expires_at is not None else None}
         async with self._session.post("/api/auth/invite", json=data) as resp:
             status = resp.status
             if status == 200:
                 js = await resp.json()
-                # Endpoint cant return a list of invites or just a single one if you only request one
+                # Endpoint can't return a list of invites or just a single one if you only request one
                 # Endpoint *should* return a full Invite, however it only returns three fields currently,
                 # hence the PartialInvite return type.
                 if isinstance(js, list):

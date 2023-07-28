@@ -605,7 +605,7 @@ class Client:
         headers = {
             "Format": format.value,
             "Image-Compression-Percent": str(compression_percent),
-            "Expires-At": expiry.isoformat() if expiry is not None else "",
+            "Expires-At": f"date={expiry.isoformat()}" if expiry is not None else "",
             "Password": password if password is not None else "",
             "Zws": "true" if zero_width_space else "",
             "Embed": "true" if embed else "",
@@ -642,6 +642,9 @@ class Client:
         return self
 
     async def __aexit__(
-        self, exc_type: Optional[Type[BaseException]], exc: Optional[BaseException], tb: Optional[TracebackType]
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
     ) -> None:
         await self.close()

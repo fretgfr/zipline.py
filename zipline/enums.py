@@ -29,4 +29,4 @@ class NameFormat(Enum):
     uuid = "uuid"
     date = "date"
     random = "random"
-    # gfycat = "gfycat"
+    gfycat = "gfycat"

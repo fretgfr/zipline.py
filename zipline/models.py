@@ -174,6 +174,7 @@ class File:
         """Returns the full URL of this File."""
         return f"{self._session._base_url}{self.url}"
 
+
 @dataclass(slots=True)
 class User:
     """Represents a Zipline User.
@@ -477,6 +478,7 @@ class UploadResponse(NamedTuple):
         }
 
         return cls(**fields)
+
 
 # TODO support files on disk
 class FileData:

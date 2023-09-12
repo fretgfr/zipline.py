@@ -49,6 +49,8 @@ class Forbidden(ZiplineError):
 class NotFound(ZiplineError):
     """Server returned a 404 response."""
 
+    pass
+
 
 class ServerError(ZiplineError):
     """Server returned a 500 response code."""

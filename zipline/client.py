@@ -59,7 +59,9 @@ class Client:
         self._session = aiohttp.ClientSession(base_url=server_url, headers={"Authorization": token})
 
     async def create_user(self, *, username: str, password: str, administrator: bool = False) -> User:
-        """Creates a User.
+        """|coro|
+
+        Creates a User.
 
         Parameters
         ----------
@@ -98,7 +100,9 @@ class Client:
         raise UnhandledError(f"{status} not handled in create_user!")
 
     async def get_password_protected_image(self, *, id: int, password: str) -> bytes:
-        """Retrieves the content of a password protected File.
+        """|coro|
+
+        Retrieves the content of a password protected File.
 
         Parameters
         ----------
@@ -135,7 +139,9 @@ class Client:
         raise UnhandledError(f"Code {status} raised in get_password_protected_image not handled!")
 
     async def get_all_invites(self) -> List[Invite]:
-        """Retrieves all Invites.
+        """|coro|
+
+        Retrieves all Invites.
 
         Returns
         -------
@@ -162,7 +168,9 @@ class Client:
         raise UnhandledError(f"Code {status} unhandled in get_all_invites!")
 
     async def create_invites(self, *, count: int = 1, expires_at: Optional[datetime] = None) -> List[PartialInvite]:
-        """Creates user invites.
+        """|coro|
+
+        Creates user invites.
 
         Parameters
         ----------
@@ -211,7 +219,9 @@ class Client:
         raise UnhandledError(f"Code {status} unhandled in create_invites!")
 
     async def delete_invite(self, code: str, /) -> Invite:
-        """Deletes an Invite with given code.
+        """|coro|
+
+        Deletes an Invite with given code.
 
         Parameters
         ----------
@@ -244,7 +254,9 @@ class Client:
         raise UnhandledError(f"Code {status} unhandled in delete_invite!")
 
     async def get_all_folders(self, *, with_files: bool = False) -> List[Folder]:
-        """Returns all Folders
+        """|coro|
+
+        Returns all Folders
 
         Parameters
         ----------
@@ -268,7 +280,9 @@ class Client:
         raise UnhandledError(f"Code {status} unhandled in get_all_folders!")
 
     async def create_folder(self, name: str, /, *, files: Optional[List[File]] = None) -> Folder:
-        """Creates a Folder.
+        """|coro|
+
+        Creates a Folder.
 
         Parameters
         ----------
@@ -301,7 +315,9 @@ class Client:
         raise UnhandledError(f"Code {status} unhandled in create_folder!")
 
     async def get_folder(self, id: int, /, *, with_files: bool = False) -> Folder:
-        """Gets a folder with a given id.
+        """|coro|
+
+        Gets a folder with a given id.
 
         Parameters
         ----------
@@ -338,7 +354,9 @@ class Client:
         raise UnhandledError(f"Code {status} unhandled in create_folder!")
 
     async def get_user(self, id: int, /) -> User:
-        """Returns a User with the given id.
+        """|coro|
+
+        Returns a User with the given id.
 
         Parameters
         ----------
@@ -372,7 +390,9 @@ class Client:
     # TODO methods for /api/user/export
 
     async def get_all_files(self) -> List[File]:
-        """Gets all Files belonging to your user.
+        """|coro|
+
+        Gets all Files belonging to your user.
 
         Returns
         -------
@@ -389,7 +409,9 @@ class Client:
 
     # TODO BROKEN FOR SOME REASON
     async def delete_all_files(self) -> int:
-        """Deletes all of your Files
+        """|coro|
+
+        Deletes all of your Files
 
         Returns
         -------
@@ -408,7 +430,9 @@ class Client:
         raise UnhandledError(f"Code {status} unhandled in delete_all_files!")
 
     async def get_recent_files(self, *, amount: int = 4, filter: Literal["all", "media"] = "all") -> List[File]:
-        """Gets recent files uploaded by you.
+        """|coro|
+
+        Gets recent files uploaded by you.
 
         Parameters
         ----------
@@ -440,7 +464,9 @@ class Client:
         raise UnhandledError(f"Code {status} unhandled in get_recent_files!")
 
     async def get_all_shortened_urls(self) -> List[ShortenedURL]:
-        """Retrieves all shortened urls for your user.
+        """|coro|
+
+        Retrieves all shortened urls for your user.
 
         Returns
         -------
@@ -463,7 +489,9 @@ class Client:
         max_views: Optional[int] = None,
         zero_width_space: bool = False,
     ) -> str:
-        """Shortens a url
+        """|coro|
+
+        Shortens a url
 
         Parameters
         ----------
@@ -512,7 +540,9 @@ class Client:
         raise UnhandledError(f"Code {status} unhandled in shorten_url!")
 
     async def get_all_users(self) -> List[User]:
-        """Gets all users.
+        """|coro|
+
+        Gets all users.
 
         Returns
         -------
@@ -540,7 +570,7 @@ class Client:
 
     async def upload_file(
         self,
-        payload: FileUploadPayload,
+        payload: FileData,
         *,
         format: NameFormat = NameFormat.uuid,
         compression_percent: int = 0,
@@ -552,12 +582,14 @@ class Client:
         text: bool = False,
         override_name: Optional[str] = None,
         original_name: Optional[str] = None,
-    ) -> FileUploadResponse:
-        """Uploads a File to zipline
+    ) -> UploadResponse:
+        """|coro|
+
+        Uploads a File to Zipline
 
         Parameters
         ----------
-        payload : UploadFile
+        payload : FileData
             The file to upload.
         format : NameFormat, optional
             The format of the name to assign to the uploaded File, by default NameFormat.uuid
@@ -582,7 +614,7 @@ class Client:
 
         Returns
         -------
-        FileUploadResponse
+        UploadResponse
             The uploaded File
 
         Raises
@@ -622,7 +654,7 @@ class Client:
             status = resp.status
             if status == 200:
                 js = await resp.json()
-                return FileUploadResponse._from_data(js)
+                return UploadResponse._from_data(js)
 
             elif status == 400:
                 js = await resp.json()

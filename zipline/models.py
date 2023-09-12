@@ -31,7 +31,7 @@ import aiohttp
 
 from .errors import NotFound, UnhandledError
 
-__all__ = ("File", "User", "PartialInvite", "Invite", "Folder", "ShortenedURL", "FileUploadResponse", "FileUploadPayload")
+__all__ = ("File", "User", "PartialInvite", "Invite", "Folder", "ShortenedURL", "UploadResponse", "FileData")
 
 
 @dataclass(slots=True)
@@ -101,7 +101,9 @@ class File:
         return cls(_session=session, **fields)
 
     async def read(self) -> bytes:
-        """Read the File into memory.
+        """|coro|
+
+        Read the File into memory.
 
         Returns
         -------
@@ -112,7 +114,9 @@ class File:
             return await resp.read()
 
     async def delete(self) -> None:
-        """Delete this File.
+        """|coro|
+
+        Delete this File.
 
         Returns
         -------
@@ -135,7 +139,9 @@ class File:
         raise UnhandledError(f"Code {status} unhandled in File.delete!")
 
     async def edit(self, *, favorite: Optional[bool] = None) -> File:
-        """Edit this File.
+        """|coro|
+
+        Edit this File.
 
         Parameters
         ----------
@@ -305,7 +311,9 @@ class Invite:
         return f"{self._session._base_url}/auth/register?code={self.code}"
 
     async def delete(self) -> Invite:
-        """Delete this Invite.
+        """|coro|
+
+        Delete this Invite.
 
         Returns
         -------
@@ -424,7 +432,9 @@ class ShortenedURL:
         return f"{self._session._base_url}{self.url}"
 
     async def delete(self) -> None:
-        """Deletes this ShortenedURL
+        """|coro|
+
+        Deletes this ShortenedURL
 
         Returns
         -------
@@ -440,7 +450,7 @@ class ShortenedURL:
         raise UnhandledError(f"Code {status} unhandled in ShortenedURL.delete!")
 
 
-class FileUploadResponse(NamedTuple):
+class UploadResponse(NamedTuple):
     """Represents a response to a File upload.
 
     Fields
@@ -458,7 +468,7 @@ class FileUploadResponse(NamedTuple):
     removed_gps: Optional[bool]
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any]) -> FileUploadResponse:
+    def _from_data(cls, data: Dict[str, Any]) -> UploadResponse:
         expires_at = data.get("expiresAt")
         fields = {
             "file_urls": data["files"],
@@ -468,8 +478,8 @@ class FileUploadResponse(NamedTuple):
 
         return cls(**fields)
 
-
-class FileUploadPayload:
+# TODO support files on disk
+class FileData:
     """Represents a File to upload to Zipline."""
 
     __slots__ = ("filename", "data", "mimetype")
@@ -495,6 +505,7 @@ class FileUploadPayload:
         """
         self.filename = filename
 
+        # FIXME: Suboptimal
         if isinstance(data, io.BytesIO):
             self.data = data.read()
         elif isinstance(data, bytes):

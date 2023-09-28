@@ -31,7 +31,16 @@ import aiohttp
 
 from .errors import NotFound, UnhandledError
 
-__all__ = ("File", "User", "PartialInvite", "Invite", "Folder", "ShortenedURL", "UploadResponse", "FileData")
+__all__ = (
+    "File",
+    "User",
+    "PartialInvite",
+    "Invite",
+    "Folder",
+    "ShortenedURL",
+    "UploadResponse",
+    "FileData",
+)
 
 
 @dataclass(slots=True)

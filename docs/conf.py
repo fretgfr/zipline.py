@@ -2,7 +2,7 @@
 #
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
-
+# fmt: off
 import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'zipline.py'
 copyright = '2023, fretgfr'
 author = 'fretgfr'
-release = '0.5.0'
+release = '0.9.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

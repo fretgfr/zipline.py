@@ -393,7 +393,9 @@ class Folder:
         return cls(_session=session, **fields)
 
     async def add_file(self, file: File, /) -> None:
-        """Adds a File to this Folder
+        """|coro|
+
+        Adds a File to this Folder
 
         Parameters
         ----------
@@ -423,7 +425,9 @@ class Folder:
         raise UnhandledError(f"Code {status} unhandled in add_file!")
 
     async def remove_file(self, file: File, /):
-        """Removes a File from this Folder
+        """|coro|
+
+        Removes a File from this Folder
 
         Parameters
         ----------

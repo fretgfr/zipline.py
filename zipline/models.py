@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import io
 import mimetypes
+import os
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, NamedTuple, Optional, Union
@@ -489,42 +490,51 @@ class UploadResponse(NamedTuple):
         return cls(**fields)
 
 
-# TODO support files on disk
 class FileData:
     """Represents a File to upload to Zipline."""
 
     __slots__ = ("filename", "data", "mimetype")
 
-    def __init__(self, filename: str, data: Union[bytes, io.BytesIO], *, mimetype: Optional[str] = None) -> None:
-        """Create a File to upload to Zipline
+    def __init__(
+        self,
+        data: Union[str, bytes, os.PathLike[Any], io.BufferedIOBase],
+        filename: Optional[str] = None,
+        *,
+        mimetype: Optional[str] = None,
+    ) -> None:
+        """Used to upload a file to Zipline.
 
         Parameters
         ----------
-        filename : str
-            The name of the file to upload.
-        data : Union[bytes, io.BytesIO]
-            The binary content of the file to upload.
+        data : Union[str, bytes, os.PathLike[Any], io.BufferedIOBase]
+            The file or file like object to open.
+        filename : Optional[str]
+            The name of the file to be uploaded. Defaults to filename of the given path, if applicable.
         mimetype : Optional[str], optional
             The MIME type of the file, if None the lib will attemp to determine it.
 
         Raises
         ------
         ValueError
-            An invalid value was passed to the data parameter
+            An invalid value was passed to the data parameter.
         TypeError
-            The MIME type of the file could not be determined.
+            The MIME type of the file could not be determined and was not provided.
         """
-        self.filename = filename
-
-        # FIXME: Suboptimal
-        if isinstance(data, io.BytesIO):
-            self.data = data.read()
-        elif isinstance(data, bytes):
-            self.data = data
+        if isinstance(data, io.IOBase):
+            if not (data.seekable() and data.readable()):
+                raise ValueError(f"File buffer {data!r} must be seekable and readable")
+            self.data: io.BufferedIOBase = data
         else:
-            raise ValueError("data must be bytes or a BytesIO")
+            self.data = open(data, "rb")
 
-        self.mimetype = mimetype or mimetypes.guess_type(filename)[0]
+        if filename is None:
+            if isinstance(data, str):
+                _, filename = os.path.split(data)
+            else:
+                filename = getattr(data, "name", "untitled")
+
+        self.filename = filename
+        self.mimetype = mimetype or (mimetypes.guess_type(filename)[0] if filename else None)
 
         if self.mimetype is None:
             raise TypeError("could not determine mimetype of file given")

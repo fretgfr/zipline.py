@@ -30,7 +30,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Union
 
 import aiohttp
 
-from .errors import NotFound, UnhandledError
+from .errors import BadRequest, NotFound, UnhandledError
 
 __all__ = (
     "File",
@@ -392,6 +392,67 @@ class Folder:
 
         return cls(_session=session, **fields)
 
+    async def add_file(self, file: File, /) -> None:
+        """Adds a File to this Folder
+
+        Parameters
+        ----------
+        file : File
+            The File to add.
+
+        Raises
+        ------
+        BadRequest
+            There was an error adding the file
+        UnhandledError
+            An unexpected exception occured, please report this to the developer.
+        """
+        data = {
+            "file": file.id,
+        }
+        async with self._session.post(f"/api/user/folders/{self.id}", json=data) as resp:
+            status = resp.status
+
+            if status == 200:
+                return
+            elif status == 400:
+                msgjson = await resp.json()
+                msg = msgjson["error"]
+                raise BadRequest(f"400: {msg}")
+
+        raise UnhandledError(f"Code {status} unhandled in add_file!")
+
+    async def remove_file(self, file: File, /):
+        """Removes a File from this Folder
+
+        Parameters
+        ----------
+        file : File
+            The File to remove.
+
+        Raises
+        ------
+        BadRequest
+            There was an error removing the file
+        UnhandledError
+            An unexpected exception occured, please report this to the developer.
+        """
+        data = {
+            "file": file.id,
+        }
+
+        async with self._session.delete(f"/api/user/folders/{self.id}", json=data) as resp:
+            status = resp.status
+
+            if status == 200:
+                return
+            elif status == 400:
+                msgjson = await resp.json()
+                msg = msgjson["error"]
+                raise BadRequest(f"400: {msg}")
+
+        raise UnhandledError(f"Code {status} unhandled in remove_file!")
+
 
 @dataclass(slots=True)
 class ShortenedURL:
@@ -491,7 +552,7 @@ class UploadResponse(NamedTuple):
 
 
 class FileData:
-    """Represents a File to upload to Zipline."""
+    """Used to upload a File to Zipline."""
 
     __slots__ = ("filename", "data", "mimetype")
 

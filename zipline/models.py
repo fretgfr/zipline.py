@@ -150,7 +150,7 @@ class File:
 
         Parameters
         ----------
-        favorite : Optional[:class:`bool`]
+        favorite: Optional[:class:`bool`]
             Whether this File is favorited., by default None
 
         Returns

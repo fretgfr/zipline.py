@@ -20,6 +20,7 @@ requires-python = ">=3.11"
 
 [project.optional-dependencies]
 dev = ["black", "isort", "typing_extensions"]
+docs = ["sphinx", "sphinx-rtd-theme"]
 
 [project.urls]
 Homepage = "https://github.com/fretgfr/zipline.py/"

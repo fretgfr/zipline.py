@@ -21,6 +21,8 @@ SOFTWARE.
 """
 from enum import Enum
 
+__all__ = ("NameFormat",)
+
 
 class NameFormat(Enum):
     """Format for the name of uploaded Files"""

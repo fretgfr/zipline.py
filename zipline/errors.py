@@ -61,7 +61,7 @@ class NotFound(ZiplineError):
 
 
 class ServerError(ZiplineError):
-    """Server returned a 500 response code."""
+    """Server returned a 5xx response code."""
 
     pass
 

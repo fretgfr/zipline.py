@@ -7,7 +7,7 @@ Welcome to zipline.py's documentation!
 ======================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    zipline

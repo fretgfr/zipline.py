@@ -26,7 +26,7 @@ import mimetypes
 import os
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, NamedTuple, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import aiohttp
 
@@ -48,31 +48,31 @@ __all__ = (
 class File:
     """Represents a file stored on Zipline.
 
-    Fields
-    --------
-    created_at: datetime
+    Attributes
+    ----------
+    created_at: :class:`datetime.datetime`
         When the File was created.
-    expires_at: Optional[datetime]
+    expires_at: Optional[:class:`datetime.datetime`]
         When the File expires.
-    name: str
+    name: :class:`str`
         The name of the File.
-    mimetype: str
+    mimetype: :class:`str`
         The MIME type of the File.
-    id: int
+    id: :class:`int`
         The id for the File.
-    favorite: bool
+    favorite: :class:`bool`
         Whether the File is favorited.
-    views: int
+    views: :class:`int`
         The number of times the File has been viewed.
-    folder_id: Optional[int]
+    folder_id: Optional[:class:`int`]
         The id of the Folder this File belongs to, None if the File is not in a Folder.
-    max_views: Optional[int]
+    max_views: Optional[:class:`int`]
         The number of times the File can be viewed before being removed. None if there is no limit.
-    size: int
+    size: :class:`int`
         The size of the File in bytes.
-    url: str
+    url: :class:`str`
         The url if the File. Note this does not contain the base url.
-    original_name: Optional[str]
+    original_name: Optional[:class:`str`]
         The original_name of the File. None if this information wasn't kept on upload.
     """
 
@@ -128,11 +128,6 @@ class File:
 
         Delete this File.
 
-        Returns
-        -------
-        File
-            The deleted File
-
         Raises
         ------
         NotFound
@@ -155,12 +150,12 @@ class File:
 
         Parameters
         ----------
-        favorite : Optional[bool], optional
+        favorite : Optional[:class:`bool`]
             Whether this File is favorited., by default None
 
         Returns
         -------
-        File
+        :class:`File`
             The edited File.
 
         Raises
@@ -189,29 +184,31 @@ class File:
 class User:
     """Represents a Zipline User.
 
-    Fields
-    --------
-    id: int
+    Attributes
+    ----------
+    id: :class:`int`
         The User's id.
-    username: str
+    username: :class:`str`
         The User's username
-    avatar: Optional[str]
+    avatar: Optional[:class:`str`]
         The User's avatar, encoded in base64. None if they don't have one set.
-    token: str
+    token: :class:`str`
         The User's token
-    administrator: bool
+    administrator: :class:`bool`
         Whether the User is an administrator
-    super_admin: bool
+    super_admin: :class:`bool`
         Whether the User is a super admin
-    system_theme: str
+    system_theme: :class:`str`
         The User's preferred theme
-    embed: Dict[str, Any]
+    embed: Dict[:class:`str`, Any]
         The User's embed data, raw.
-    ratelimit: Optional[int]
+    ratelimit: Optional[:class:`int`]
         The User's ratelimit between File uploads, in seconds.
-    totp_secret: Optional[str]
-        Honestly I have no fucking idea what this is for.
-    domains: List[str]
+    totp_secret: Optional[:class:`str`]
+        The User's Time-based One-Time Password (TOTP) secret. This secret is used for two-factor authentication (2FA).
+        It is a unique secret key associated with the user's account. If set, the user can generate time-based one-time passwords
+        using this secret to enhance the security of their account.
+    domains: List[:class:`str`]
         List of domains the User has configured.
     """
 
@@ -247,16 +244,17 @@ class User:
         return cls(_session=session, **fields)
 
 
-class PartialInvite(NamedTuple):
+@dataclass(slots=True)
+class PartialInvite:
     """Represents a partial Zipline invite. This is returned by Client.create_invites.
 
-    Fields
-    --------
-    code: str
+    Attributes
+    ----------
+    code: :class:`str`
         The invite code generated.
-    created_by_id: int
+    created_by_id: :class:`int`
         The id of the User that created this invite.
-    expires_at: Optional[datetime]
+    expires_at: Optional[:class:`datetime.datetime`]
         When this invite expires. None if the invite does not expire.
     """
 
@@ -279,19 +277,19 @@ class PartialInvite(NamedTuple):
 class Invite:
     """Represents a Zipline invite.
 
-    Fields
-    --------
-    code: str
+    Attributes
+    ----------
+    code: :class:`str`
         The Invite code.
-    id: int
+    id: :class:`int`
         The Invite id.
-    created_at: datetime
+    created_at: :class:`datetime.datetime`
         When the Invite was created.
-    expires_at: Optional[datetime]
+    expires_at: Optional[:class:`datetime.datetime`]
         When the Invite expires. None if it does not expire.
-    used: bool
+    used: :class:`bool`
         Whether the Invite has been used.
-    created_by_id: int
+    created_by_id: :class:`int`
         The id of the User that created this Invite.
     """
 
@@ -328,7 +326,7 @@ class Invite:
 
         Returns
         -------
-        Invite
+        :class:`Invite`
             The deleted Invite.
 
         Raises
@@ -353,19 +351,19 @@ class Invite:
 class Folder:
     """Represents a Zipline folder.
 
-    Fields
-    --------
-    id: int
+    Attributes
+    ----------
+    id: :class:`int`
         The id of the Folder
-    name: str
+    name: :class:`str`
         The name of the Folder
-    user_id: int
+    user_id: :class:`int`
         The id of the User that owns the Folder.
-    created_at: datetime
+    created_at: :class:`datetime.datetime`
         When the Folder was created.
-    updated_at: datetime
+    updated_at: :class:`datetime.datetime`
         When the folder was last updated.
-    files: List[File]
+    files: List[:class:`~zipline.models.File`]
         The Files in this Folder, if any. None if the Folder was fetched without files.
     """
 
@@ -399,7 +397,7 @@ class Folder:
 
         Parameters
         ----------
-        file : File
+        file: :class:`File`
             The File to add.
 
         Raises
@@ -431,7 +429,7 @@ class Folder:
 
         Parameters
         ----------
-        file : File
+        file: :class:`File`
             The File to remove.
 
         Raises
@@ -462,21 +460,21 @@ class Folder:
 class ShortenedURL:
     """Represents a shortened url on Zipline.
 
-    Fields
-    --------
-    created_at: datetime
+    Attributes
+    ----------
+    created_at: :class:`datetime.datetime`
         When the url was created.
-    id: int
+    id: :class:`int`
         The id of the url.
-    destination: str
+    destination: :class:`str`
         The destination url.
-    vanity: Optional[str]
+    vanity: Optional[:class:`str`]
         The vanity url of this invite. None if this isn't a vanity url.
-    views: int
+    views: :class:`int`
         The number of times this invite has been used.
-    max_views: Optional[int]
+    max_views: Optional[:class:`int`]
         The number of times this url can be viewed before deletion. None if there is no limit.
-    url: str
+    url: :class:`str`
         The url path to use this. Note this does not include the base url.
     """
 
@@ -510,12 +508,7 @@ class ShortenedURL:
     async def delete(self) -> None:
         """|coro|
 
-        Deletes this ShortenedURL
-
-        Returns
-        -------
-        ShortenedURL
-            The deleted url.
+        Deletes this :class:`ShortenedURL`.
         """
         data = {"id": self.id}
         async with self._session.delete("/api/user/urls", json=data) as resp:
@@ -526,16 +519,17 @@ class ShortenedURL:
         raise UnhandledError(f"Code {status} unhandled in ShortenedURL.delete!")
 
 
-class UploadResponse(NamedTuple):
+@dataclass(slots=True)
+class UploadResponse:
     """Represents a response to a File upload.
 
-    Fields
-    --------
-    file_urls: List[str]
+    Attributes
+    ----------
+    file_urls: List[:class:`str`]
         The urls of the Files that were uploaded.
-    expires_at: Optional[datetime]
+    expires_at: Optional[:class:`datetime.datetime`]
         When the uploads expire. None if they do not expire.
-    removed_gps: Optional[bool]
+    removed_gps: Optional[:class:`bool`]
         Whether gps data was removed from the uploads.
     """
 
@@ -571,11 +565,11 @@ class FileData:
 
         Parameters
         ----------
-        data : Union[str, bytes, os.PathLike[Any], io.BufferedIOBase]
+        data: Union[:class:`str`, :class:`bytes`, :class:`os.PathLike`, :class:`io.BufferedIOBase`]
             The file or file like object to open.
-        filename : Optional[str]
+        filename: Optional[:class:`str`]
             The name of the file to be uploaded. Defaults to filename of the given path, if applicable.
-        mimetype : Optional[str], optional
+        mimetype: Optional[:class:`str`]
             The MIME type of the file, if None the lib will attemp to determine it.
 
         Raises

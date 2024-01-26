@@ -24,13 +24,17 @@ release = __version__
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon'
-]
+    'sphinx.ext.napoleon',
+    'sphinx.ext.intersphinx'
+] 
 
 intersphinx_mapping = {
   'py': ('https://docs.python.org/3', None),
   'aio': ('https://docs.aiohttp.org/en/stable/', None),
 }
+
+autodoc_member_order = 'bysource'
+autodoc_typehints = 'none'
 
 rst_prolog = """
 .. |coro| replace:: This function is a |coroutine_link|_.
@@ -42,8 +46,11 @@ rst_prolog = """
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
+# The master toctree document.
+master_doc = 'index'
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+# html_static_path = ['_static']

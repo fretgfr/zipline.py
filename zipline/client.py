@@ -40,7 +40,16 @@ __all__ = ("Client",)
 class Client:
     """A Zipline Client.
 
-    Supports being created normally as well as used in an async context manager.
+    .. container:: operations
+
+        .. describe:: async with x:
+
+            Returns the Client itself. Used to gracefully close the client on exit.
+
+            .. code-block:: python3
+
+                async with zipline.Client(server_url, token) as client:
+                    ...
     """
 
     __slots__ = ("server_url", "_session")
@@ -50,9 +59,9 @@ class Client:
 
         Parameters
         ----------
-        server_url : str
+        server_url: :class:`str`
             The URL of the Zipline server.
-        token : str
+        token: :class:`str`
             Your Zipline token.
         """
         self.server_url = server_url
@@ -65,11 +74,11 @@ class Client:
 
         Parameters
         ----------
-        username : str
+        username: :class:`str`
             The username of the user to create.
-        password : str
+        password: :class:`str`
             The password of the user to create.
-        administrator : bool, optional
+        administrator: Optional[:class:`bool`]
             Whether this user should be an administrator, by default False
 
         Returns
@@ -106,14 +115,14 @@ class Client:
 
         Parameters
         ----------
-        id : int
+        id: :class:`int`
             The id of the File to get.
-        password : str
+        password: :class:`str`
             The password of the File to get.
 
         Returns
         -------
-        bytes
+        :class:`bytes`
             The File's content.
 
         Raises
@@ -145,7 +154,7 @@ class Client:
 
         Returns
         -------
-        List[Invite]
+        List[:class:`~zipline.models.Invite`]
             The invites on the server.
 
         Raises
@@ -174,14 +183,14 @@ class Client:
 
         Parameters
         ----------
-        count : int, optional
+        count: :class:`int`
             The number of invites to create, by default 1
-        expires_at : Optional[datetime], optional
+        expires_at: Optional[:class:`datetime.datetime`]
             When the created invite(s) should expire, by default None
 
         Returns
         -------
-        List[PartialInvite]
+        List[:class:`zipline.models.PartialInvite`]
             The created invites.
 
         Raises
@@ -225,12 +234,12 @@ class Client:
 
         Parameters
         ----------
-        code : str
+        code: :class:`str`
             The code of the Invite to delete.
 
         Returns
         -------
-        Invite
+        :class:`~zipline.models.Invite`
             The deleted Invite
 
         Raises
@@ -260,12 +269,12 @@ class Client:
 
         Parameters
         ----------
-        with_files : bool, optional
+        with_files: Optional[:class:`bool`]
             Whether the retrieved Folder should contain File information, by default False
 
         Returns
         -------
-        List[Folder]
+        List[:class:`~zipline.models.Folder`]
             The retrieved Folders
         """
         query_params = {}
@@ -286,14 +295,14 @@ class Client:
 
         Parameters
         ----------
-        name : str
+        name: :class:`str`
             The name of the folder to create.
-        files : Optional[List[File]], optional
+        files: Optional[List[:class:`~zipline.models.File`]]
             Files that should be added to the created folder, by default None
 
         Returns
         -------
-        Folder
+        :class:`~zipline.models.Folder`
             The created Folder
 
         Raises
@@ -321,14 +330,14 @@ class Client:
 
         Parameters
         ----------
-        id : int
+        id: :class:`int`
             The id of the folder to get.
-        with_files : bool, optional
+        with_files: Optional[:class:`bool`]
             Whether File information should be retrieved, by default False
 
         Returns
         -------
-        Folder
+        :class:`~zipline.models.Folder`
             The requested Folder
 
         Raises
@@ -360,12 +369,12 @@ class Client:
 
         Parameters
         ----------
-        id : int
+        id: :class:`int`
             The id of the User to get.
 
         Returns
         -------
-        User
+        :class:`~zipline.models.User`
             The retrieved User
 
         Raises
@@ -396,7 +405,7 @@ class Client:
 
         Returns
         -------
-        List[File]
+        List[:class:`~zipline.models.File`]
             The returned Files
         """
         async with self._session.get("/api/user/files") as resp:
@@ -415,8 +424,8 @@ class Client:
 
         Returns
         -------
-        int
-            The number of removed Files
+        :class:`int`
+            The number of removed :class:`~zipline.models.File`'s
         """
         data = {"id": None, "all": True}
         async with self._session.delete("/api/user/files", json=data) as resp:
@@ -436,15 +445,15 @@ class Client:
 
         Parameters
         ----------
-        amount : int, optional
+        amount: Optional[:class:`int`]
             The number of results to return. Must be in 1 <= amount <= 50, by default 4
-        filter : Literal["all", "media"], optional
+        filter: Optional[Literal["all", "media"]]
             What files to get. "all" to get all Files, "media" to get images/videos/etc., by default "all"
 
         Returns
         -------
-        List[File]
-            _description_
+        List[:class:`~zipline.models.File`]
+            The requested Files.
 
         Raises
         ------
@@ -470,7 +479,7 @@ class Client:
 
         Returns
         -------
-        List[ShortenedURL]
+        List[:class:`~zipline.models.ShortenedURL`]
             The requested shortened urls.
         """
         async with self._session.get("/api/user/urls") as resp:
@@ -495,18 +504,18 @@ class Client:
 
         Parameters
         ----------
-        original_url : str
+        original_url: :class:`str`
             The url to shorten
-        vanity : Optional[str], optional
+        vanity: Optional[:class:`str`]
             A vanity name to use. None to shorten normally, by default None
-        max_views : Optional[int], optional
+        max_views: Optional[:class:`int`]
             The number of times the url can be used before being deleted. None for unlimited uses, by default None
-        zero_width_space : bool, optional
+        zero_width_space: Optional[:class:`bool`]
             Whether to incude zero width spaces in the returned url, by default False
 
         Returns
         -------
-        str
+        :class:`str`
             The shortened url
 
         Raises
@@ -546,7 +555,7 @@ class Client:
 
         Returns
         -------
-        List[User]
+        List[:class:`~zipline.models.User`]
             The retrieved users
 
         Raises
@@ -589,32 +598,32 @@ class Client:
 
         Parameters
         ----------
-        payload : FileData
+        payload: :class:`~zipline.models.FileData`
             The file to upload.
-        format : NameFormat, optional
-            The format of the name to assign to the uploaded File, by default NameFormat.uuid
-        compression_percent : int, optional
+        format: Optional[:class:`~zipline.enums.NameFormat`]
+            The format of the name to assign to the uploaded File, by default :attr:`~zipline.enums.NameFormat`'s `uuid`.
+        compression_percent: Optional[:class:`int`]
             How compressed should the uploaded File be, by default 0
-        expiry : Optional[datetime], optional
+        expiry: Optional[:class:`datetime.datetime`]
             When the uploaded File should expire, by default None
-        password : Optional[str], optional
+        password: Optional[:class:`str`]
             The password required to view the uploaded File, by default None
-        zero_width_space : bool, optional
+        zero_width_space: Optional[:class:`bool`]
             Whether to include zero width spaces in the name of the uploaded File, by default False
-        embed : bool, optional
+        embed: Optional[:class:`bool`]
             Whether to include embed data for the uploaded File, typically used on Discord, by default False
-        max_views : Optional[int], optional
+        max_views: Optional[:class:`int`]
             The number of times the uploaded File can be viewed before it is deleted, by default None
-        text : bool, optional
+        text: Optional[:class:`bool`]
             Whether the File is a text file, by default False
-        override_name : Optional[str], optional
+        override_name: Optional[:class:`str`]
             A name to give the uploaded file. If provided this will override the server generated name, by default None
-        original_name : Optional[str], optional
+        original_name: Optional[:class:`str`]
             The original_name of the file. None to not preserve this data, by default None
 
         Returns
         -------
-        UploadResponse
+        :class:`~zipline.models.UploadResponse`
             The uploaded File
 
         Raises

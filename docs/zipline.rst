@@ -10,48 +10,6 @@ zipline.client module
    :show-inheritance:
 
 
-zipline.enums module
---------------------
-
-.. currentmodule:: zipline.enums
-
-.. autoclass:: zipline.enums.NameFormat
-   :members:
-   :show-inheritance:
-
-zipline.errors module
----------------------
-
-.. currentmodule:: zipline.errors
-
-.. autoclass:: zipline.errors.ZiplineError
-   :members:
-   :show-inheritance:
-
-.. autoclass:: zipline.errors.UnhandledError
-   :members:
-   :show-inheritance:
-
-.. autoclass:: zipline.errors.BadRequest
-   :members:
-   :show-inheritance:
-
-.. autoclass:: zipline.errors.Forbidden
-   :members:
-   :show-inheritance:
-
-.. autoclass:: zipline.errors.NotFound
-   :members:
-   :show-inheritance:
-
-.. autoclass:: zipline.errors.ServerError
-   :members:
-   :show-inheritance:
-
-.. autoclass:: zipline.errors.NotAuthenticated
-   :members:
-   :show-inheritance:
-
 zipline.models module
 ---------------------
 
@@ -86,5 +44,49 @@ zipline.models module
    :show-inheritance:
 
 .. autoclass:: zipline.models.FileData
+   :members:
+   :show-inheritance:
+
+
+zipline.enums module
+--------------------
+
+.. currentmodule:: zipline.enums
+
+.. autoclass:: zipline.enums.NameFormat
+   :members:
+   :show-inheritance:
+
+
+zipline.errors module
+---------------------
+
+.. currentmodule:: zipline.errors
+
+.. autoclass:: zipline.errors.ZiplineError
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.errors.UnhandledError
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.errors.BadRequest
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.errors.Forbidden
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.errors.NotFound
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.errors.ServerError
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.errors.NotAuthenticated
    :members:
    :show-inheritance:

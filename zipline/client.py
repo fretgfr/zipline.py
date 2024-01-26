@@ -190,7 +190,7 @@ class Client:
 
         Returns
         -------
-        List[:class:`zipline.models.PartialInvite`]
+        List[:class:`~zipline.models.PartialInvite`]
             The created invites.
 
         Raises

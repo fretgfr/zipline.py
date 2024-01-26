@@ -74,11 +74,11 @@ class Client:
 
         Parameters
         ----------
-        username : :class:`str`
+        username: :class:`str`
             The username of the user to create.
-        password : :class:`str`
+        password: :class:`str`
             The password of the user to create.
-        administrator : Optional[:class:`bool`]
+        administrator: Optional[:class:`bool`]
             Whether this user should be an administrator, by default False
 
         Returns
@@ -115,9 +115,9 @@ class Client:
 
         Parameters
         ----------
-        id : :class:`int`
+        id: :class:`int`
             The id of the File to get.
-        password : :class:`str`
+        password: :class:`str`
             The password of the File to get.
 
         Returns
@@ -445,9 +445,9 @@ class Client:
 
         Parameters
         ----------
-        amount : Optional[:class:`int`]
+        amount: Optional[:class:`int`]
             The number of results to return. Must be in 1 <= amount <= 50, by default 4
-        filter : Optional[Literal["all", "media"]]
+        filter: Optional[Literal["all", "media"]]
             What files to get. "all" to get all Files, "media" to get images/videos/etc., by default "all"
 
         Returns

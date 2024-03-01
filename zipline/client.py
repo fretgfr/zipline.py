@@ -624,7 +624,7 @@ class Client:
         folder: Optional[Union[:class:`~zipline.models.Folder`, :class:`int`]]
             The Folder (or it's ID) to place this upload into automatically
 
-            .. versionadded:: 0.16.0
+            .. versionadded:: 0.15.0
 
         Returns
         -------

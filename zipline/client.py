@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from types import TracebackType
-from typing import TYPE_CHECKING, List, Literal, Optional, Type
+from typing import TYPE_CHECKING, List, Literal, Optional, Type, Union
 
 import aiohttp
 
@@ -591,6 +591,7 @@ class Client:
         text: bool = False,
         override_name: Optional[str] = None,
         original_name: Optional[str] = None,
+        folder: Optional[Union[Folder, int]] = None,
     ) -> UploadResponse:
         """|coro|
 
@@ -620,6 +621,8 @@ class Client:
             A name to give the uploaded file. If provided this will override the server generated name, by default None
         original_name: Optional[:class:`str`]
             The original_name of the file. None to not preserve this data, by default None
+        folder: Optional[Union[:class:`~zipline.models.Folder`, :class:`int`]]
+            The Folder (or it's ID) to place this upload into automatically
 
         Returns
         -------
@@ -632,6 +635,8 @@ class Client:
             compression_percent was not in 0 <= compression_percent <= 100
         ValueError
             max_views passed was less than 0
+        ValueError
+            type passed for folder was incorrect
         BadRequest
             Server could not process the request
         ServerError
@@ -655,6 +660,12 @@ class Client:
             "X-Zipline-Filename": override_name if override_name is not None else "",
             "Original-Name": original_name if original_name is not None else "",
         }
+
+        if folder is not None:
+            if not isinstance(folder, (Folder, int)):
+                raise ValueError("folder argument must be a Folder or integer")
+
+            headers["X-Zipline-Folder"] = str(folder.id) if isinstance(folder, Folder) else str(folder)
 
         formdata = aiohttp.FormData()
         formdata.add_field("file", payload.data, filename=payload.filename, content_type=payload.mimetype)

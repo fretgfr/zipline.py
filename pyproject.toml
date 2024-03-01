@@ -4,7 +4,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zipline.py"
-version = "0.15.0"
 description = "An async wrapper for the Zipline api."
 readme = "README.md"
 authors = [{ name = "fretgfr", email = "fretgfr@sudomail.com" }]
@@ -17,6 +16,7 @@ classifiers = [
 keywords = ["zipline", "api wrapper"]
 dependencies = ["aiohttp>=3.7.4,<4"]
 requires-python = ">=3.11"
+dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = ["black", "isort", "typing_extensions"]
@@ -27,6 +27,9 @@ Homepage = "https://github.com/fretgfr/zipline.py/"
 
 [tool.setuptools]
 packages = ["zipline"]
+
+[tool.setuptools.dynamic]
+version = { attr = "zipline.__version__" }
 
 [tool.black]
 line-length = 125

@@ -1,3 +1,4 @@
+An asynchronous wrapper for the [Zipline](https://zipline.diced.sh/) API.
 
 # Quickstart
 
@@ -16,4 +17,5 @@ async def main():
 asyncio.run(main())
 ```
 
-Documentation available [HERE](https://ziplinepy.readthedocs.io/en/latest/).
+Additional examples available [HERE](https://github.com/fretgfr/zipline.py/tree/master/examples)
+Documentation available [HERE](https://ziplinepy.readthedocs.io/en/latest/)

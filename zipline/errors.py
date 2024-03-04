@@ -49,7 +49,7 @@ class BadRequest(ZiplineError):
 
 
 class Forbidden(ZiplineError):
-    """Server returned a 401 response."""
+    """Server returned a 401 or 403 response."""
 
     pass
 

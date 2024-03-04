@@ -24,6 +24,8 @@ docs = ["sphinx", "sphinx-rtd-theme"]
 
 [project.urls]
 Homepage = "https://github.com/fretgfr/zipline.py/"
+Documentation = "https://ziplinepy.readthedocs.io/en/latest/"
+Issues = "https://github.com/fretgfr/zipline.py/issues"
 
 [tool.setuptools]
 packages = ["zipline"]

@@ -416,7 +416,6 @@ class Client:
 
         raise UnhandledError(f"Code {status} unhandled in get_all_files !")
 
-    # TODO BROKEN FOR SOME REASON
     async def delete_all_files(self) -> int:
         """|coro|
 
@@ -427,7 +426,7 @@ class Client:
         :class:`int`
             The number of removed :class:`~zipline.models.File`'s
         """
-        data = {"id": None, "all": True}
+        data = {"all": True}
         async with self._session.delete("/api/user/files", json=data) as resp:
             status = resp.status
             if status == 200:

@@ -365,6 +365,10 @@ class Folder:
         When the folder was last updated.
     files: List[:class:`~zipline.models.File`]
         The Files in this Folder, if any. None if the Folder was fetched without files.
+    public: :class:`bool`
+        Whether this folder is public.
+
+        .. versionadded:: 0.16.0
     """
 
     # TODO FOLDER SPECIFIC ACTIONS FROM "/api/user/folders/[id]" should be implemented here
@@ -375,6 +379,7 @@ class Folder:
     created_at: datetime
     updated_at: datetime
     files: List[File] | None
+    public: bool
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, session: aiohttp.ClientSession) -> Folder:
@@ -386,6 +391,7 @@ class Folder:
             "created_at": datetime.fromisoformat(data["createdAt"]),
             "updated_at": datetime.fromisoformat(data["updatedAt"]),
             "files": [File._from_data(f, session=session) for f in files] if files is not None else None,
+            "public": data["public"],
         }
 
         return cls(_session=session, **fields)
@@ -454,6 +460,10 @@ class Folder:
                 raise BadRequest(f"400: {msg}")
 
         raise UnhandledError(f"Code {status} unhandled in remove_file!")
+
+    @property
+    async def url(self) -> str:
+        return f"{self._session._base_url}/folder/{self.id}"
 
 
 @dataclass(slots=True)

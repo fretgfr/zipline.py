@@ -18,4 +18,5 @@ asyncio.run(main())
 ```
 
 Additional examples available [HERE](https://github.com/fretgfr/zipline.py/tree/master/examples)
+
 Documentation available [HERE](https://ziplinepy.readthedocs.io/en/latest/)

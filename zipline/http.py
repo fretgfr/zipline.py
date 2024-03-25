@@ -92,6 +92,9 @@ class HTTPClient:
         if "json" in kwargs:
             headers["Content-Type"] = "application/json"
 
+        if "data" in kwargs:
+            headers["Content-Type"] = "multipart/form-data"
+
         async with self.session.request(method, url, headers=headers, **kwargs) as resp:
             status = resp.status
 

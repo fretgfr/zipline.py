@@ -29,7 +29,7 @@ from typing import Any, Dict, Literal, Optional, Union
 import aiohttp
 from yarl import URL
 
-from . import __version__
+from .meta import __version__
 from .errors import BadRequest, Forbidden, NotAuthenticated, NotFound, ServerError, UnhandledError, ZiplineError
 
 

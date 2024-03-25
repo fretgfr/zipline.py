@@ -29,8 +29,8 @@ from typing import Any, Dict, Literal, Optional, Union
 import aiohttp
 from yarl import URL
 
-from .meta import __version__
 from .errors import BadRequest, Forbidden, NotAuthenticated, NotFound, ServerError, UnhandledError, ZiplineError
+from .meta import __version__
 
 
 def to_json(string: str) -> Dict[Any, Any]:
@@ -87,7 +87,7 @@ class HTTPClient:
         }
 
         if "headers" in kwargs:
-            headers.update(kwargs["headers"])
+            headers.update(kwargs.pop("headers"))
 
         if "json" in kwargs:
             headers["Content-Type"] = "application/json"

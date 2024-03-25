@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from __future__ import annotations
 
 import io
@@ -31,6 +32,7 @@ from typing import Any, Dict, List, Optional, Union
 import aiohttp
 
 from .errors import BadRequest, NotFound, UnhandledError
+from .http import HTTPClient, Route
 
 __all__ = (
     "File",
@@ -76,7 +78,7 @@ class File:
         The original_name of the File. None if this information wasn't kept on upload.
     """
 
-    _session: aiohttp.ClientSession
+    http: HTTPClient
     created_at: datetime
     expires_at: Optional[datetime]
     name: str
@@ -91,7 +93,7 @@ class File:
     original_name: Optional[str]
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, session: aiohttp.ClientSession) -> File:
+    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> File:
         expires_at = data.get("expiresAt", None)
         expires_at_dt = datetime.fromisoformat(expires_at) if expires_at is not None else None
         fields = {
@@ -108,7 +110,7 @@ class File:
             "url": data["url"],
             "original_name": data.get("originalName"),
         }
-        return cls(_session=session, **fields)
+        return cls(http=http, **fields)
 
     async def read(self) -> bytes:
         """|coro|
@@ -120,8 +122,8 @@ class File:
         bytes
             The data of the File
         """
-        async with self._session.get(self.full_url) as resp:
-            return await resp.read()
+        r = Route("GET", self.url)
+        return await self.http.request(r)
 
     async def delete(self) -> None:
         """|coro|
@@ -134,14 +136,8 @@ class File:
             The file could not be found.
         """
         data = {"id": self.id, "all": False}
-        async with self._session.delete("/api/user/files", json=data) as resp:
-            status = resp.status
-            if status == 200:
-                return
-            elif status == 404:
-                raise NotFound("404: The file could not be found.")
-
-        raise UnhandledError(f"Code {status} unhandled in File.delete!")
+        r = Route("DELETE", "/api/user/files")
+        await self.http.request(r, json=data)
 
     async def edit(self, *, favorite: Optional[bool] = None) -> File:
         """|coro|
@@ -164,20 +160,14 @@ class File:
             The File could not be found.
         """
         data = {"id": self.id, "favorite": favorite}
-        async with self._session.patch("/api/user/files", json=data) as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return File._from_data(js, session=self._session)
-            elif status == 404:
-                raise NotFound("404: File could not be found.")
-
-        raise UnhandledError(f"Code {status} unhandled in File.delete!")
+        r = Route("PATCH", "/api/user/files")
+        js = await self.http.request(r, json=data)
+        return File._from_data(js, http=self.http)
 
     @property
     def full_url(self) -> str:
         """Returns the full URL of this File."""
-        return f"{self._session._base_url}{self.url}"
+        return f"{self.http.base_url}{self.url}"
 
 
 @dataclass(slots=True)
@@ -212,7 +202,7 @@ class User:
         List of domains the User has configured.
     """
 
-    _session: aiohttp.ClientSession
+    http: HTTPClient
     id: int
     username: str
     avatar: Optional[str]  # Base64 data
@@ -226,7 +216,7 @@ class User:
     domains: List[str]
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, session: aiohttp.ClientSession) -> User:
+    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> User:
         fields = {
             "id": data["id"],
             "username": data["username"],
@@ -241,7 +231,7 @@ class User:
             "domains": data["domains"],
         }
 
-        return cls(_session=session, **fields)
+        return cls(http=http, **fields)
 
 
 @dataclass(slots=True)
@@ -293,7 +283,7 @@ class Invite:
         The id of the User that created this Invite.
     """
 
-    _session: aiohttp.ClientSession
+    http: HTTPClient
     code: str
     id: int
     created_at: datetime
@@ -302,7 +292,7 @@ class Invite:
     created_by_id: int
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, session: aiohttp.ClientSession) -> Invite:
+    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> Invite:
         fields = {
             "id": data["id"],
             "code": data["code"],
@@ -312,12 +302,12 @@ class Invite:
             "created_by_id": data["createdById"],
         }
 
-        return cls(_session=session, **fields)
+        return cls(http=http, **fields)
 
     @property
     def url(self):
         """The full url of this invite."""
-        return f"{self._session._base_url}/auth/register?code={self.code}"
+        return f"{self.http.base_url}/auth/register?code={self.code}"
 
     async def delete(self) -> Invite:
         """|coro|
@@ -335,16 +325,9 @@ class Invite:
             The Invite could not be found
         """
         query_params = {"code": self.code}
-
-        async with self._session.delete("/api/auth/invite", params=query_params) as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return Invite._from_data(js, session=self._session)
-            elif status == 404:
-                raise NotFound("404: Invite not found.")
-
-        raise UnhandledError(f"Code {status} unhandled in Invite.delete!")
+        r = Route("DELETE", "/api/auth/invite")
+        js = await self.http.request(r, params=query_params)
+        return Invite._from_data(js, http=self.http)
 
 
 @dataclass(slots=True)
@@ -372,7 +355,7 @@ class Folder:
     """
 
     # TODO FOLDER SPECIFIC ACTIONS FROM "/api/user/folders/[id]" should be implemented here
-    _session: aiohttp.ClientSession
+    http: HTTPClient
     id: int
     name: str
     user_id: int
@@ -382,7 +365,7 @@ class Folder:
     public: bool
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, session: aiohttp.ClientSession) -> Folder:
+    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> Folder:
         files = data.get("files")
         fields = {
             "id": data["id"],
@@ -390,11 +373,11 @@ class Folder:
             "user_id": data["userId"],
             "created_at": datetime.fromisoformat(data["createdAt"]),
             "updated_at": datetime.fromisoformat(data["updatedAt"]),
-            "files": [File._from_data(f, session=session) for f in files] if files is not None else None,
+            "files": [File._from_data(f, http=http) for f in files] if files is not None else None,
             "public": data["public"],
         }
 
-        return cls(_session=session, **fields)
+        return cls(http=http, **fields)
 
     async def add_file(self, file: File, /) -> None:
         """|coro|
@@ -416,17 +399,8 @@ class Folder:
         data = {
             "file": file.id,
         }
-        async with self._session.post(f"/api/user/folders/{self.id}", json=data) as resp:
-            status = resp.status
-
-            if status == 200:
-                return
-            elif status == 400:
-                msgjson = await resp.json()
-                msg = msgjson["error"]
-                raise BadRequest(f"400: {msg}")
-
-        raise UnhandledError(f"Code {status} unhandled in add_file!")
+        r = Route("POST", f"/api/user/folders/{self.id}")
+        await self.http.request(r, json=data)
 
     async def remove_file(self, file: File, /):
         """|coro|
@@ -449,21 +423,12 @@ class Folder:
             "file": file.id,
         }
 
-        async with self._session.delete(f"/api/user/folders/{self.id}", json=data) as resp:
-            status = resp.status
-
-            if status == 200:
-                return
-            elif status == 400:
-                msgjson = await resp.json()
-                msg = msgjson["error"]
-                raise BadRequest(f"400: {msg}")
-
-        raise UnhandledError(f"Code {status} unhandled in remove_file!")
+        r = Route("DELETE", f"/api/user/folders/{self.id}")
+        await self.http.request(r, json=data)
 
     @property
     async def url(self) -> str:
-        return f"{self._session._base_url}/folder/{self.id}"
+        return f"{self.http.base_url}/folder/{self.id}"
 
 
 @dataclass(slots=True)
@@ -488,7 +453,7 @@ class ShortenedURL:
         The url path to use this. Note this does not include the base url.
     """
 
-    _session: aiohttp.ClientSession
+    http: HTTPClient
     created_at: datetime
     id: int
     destination: str
@@ -498,7 +463,7 @@ class ShortenedURL:
     url: str
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, session: aiohttp.ClientSession) -> ShortenedURL:
+    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> ShortenedURL:
         fields = {
             "created_at": datetime.fromisoformat(data["createdAt"]),
             "id": data["id"],
@@ -509,11 +474,11 @@ class ShortenedURL:
             "url": data["url"],
         }
 
-        return cls(_session=session, **fields)
+        return cls(http=http, **fields)
 
     @property
     def full_url(self) -> str:
-        return f"{self._session._base_url}{self.url}"
+        return f"{self.http.base_url}{self.url}"
 
     async def delete(self) -> None:
         """|coro|
@@ -521,12 +486,8 @@ class ShortenedURL:
         Deletes this :class:`ShortenedURL`.
         """
         data = {"id": self.id}
-        async with self._session.delete("/api/user/urls", json=data) as resp:
-            status = resp.status
-            if status == 200:
-                return
-
-        raise UnhandledError(f"Code {status} unhandled in ShortenedURL.delete!")
+        r = Route("DELETE", "/api/user/urls")
+        await self.http.request(r, json=data)
 
 
 @dataclass(slots=True)

@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -29,6 +30,7 @@ import aiohttp
 
 from .enums import *
 from .errors import *
+from .http import HTTPClient, Route
 from .models import *
 
 if TYPE_CHECKING:
@@ -52,7 +54,7 @@ class Client:
                     ...
     """
 
-    __slots__ = ("server_url", "_session")
+    __slots__ = ("server_url", "http")
 
     def __init__(self, server_url: str, token: str) -> None:
         """Creates a new Client.
@@ -65,7 +67,7 @@ class Client:
             Your Zipline token.
         """
         self.server_url = server_url
-        self._session = aiohttp.ClientSession(base_url=server_url, headers={"Authorization": token})
+        self.http = HTTPClient(server_url, token)
 
     async def create_user(self, *, username: str, password: str, administrator: bool = False) -> User:
         """|coro|
@@ -93,20 +95,10 @@ class Client:
         Forbidden
             You are not an administrator and cannot use this method.
         """
-        data = {"username": username, "password": password, "administrator": administrator}
-        async with self._session.post("/api/auth/create", json=data) as resp:
-            status = resp.status
-            if status == 200:
-                userdata = await resp.json()
-                return User._from_data(userdata, session=self._session)
-            elif status == 400:
-                errdata = await resp.json()
-                msg = errdata["error"]
-                raise BadRequest(f"400: {msg}")
-            elif status == 403:
-                raise Forbidden("You cannot access this resource.")
-
-        raise UnhandledError(f"{status} not handled in create_user!")
+        json = {"username": username, "password": password, "administrator": administrator}
+        r = Route("POST", "/api/auth/create")
+        data = await self.http.request(r, json=json)
+        return User._from_data(data, http=self.http)
 
     async def get_password_protected_image(self, *, id: int, password: str) -> bytes:
         """|coro|
@@ -133,19 +125,8 @@ class Client:
             The File could not be found on the server.
         """
         query_params = {"id": id, "password": password}
-        async with self._session.get("/api/auth/image", params=query_params) as resp:
-            status = resp.status
-            if status == 200:
-                print(resp.headers)
-                return await resp.read()
-            elif status == 400:
-                msgjson = await resp.json()
-                msg = msgjson["error"]
-                raise BadRequest(f"400: {msg}")
-            elif status == 404:
-                raise NotFound("404: Requested file not found.")
-
-        raise UnhandledError(f"Code {status} raised in get_password_protected_image not handled!")
+        r = Route("GET", "/api/auth/image")
+        return await self.http.request(r, params=query_params)
 
     async def get_all_invites(self) -> List[Invite]:
         """|coro|
@@ -164,17 +145,9 @@ class Client:
         Forbidden
             You are not an administrator and do not have permission to access this resource.
         """
-        async with self._session.get("/api/auth/invite") as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return [Invite._from_data(data, session=self._session) for data in js]
-            elif status == 400:
-                raise BadRequest("Invites are disabled on this server")
-            elif status == 403:
-                raise Forbidden("You cannot access this resource.")
-
-        raise UnhandledError(f"Code {status} unhandled in get_all_invites!")
+        r = Route("GET", "/api/auth/invite")
+        data = await self.http.request(r)
+        return [Invite._from_data(data, http=self.http)]
 
     async def create_invites(self, *, count: int = 1, expires_at: Optional[datetime] = None) -> List[PartialInvite]:
         """|coro|
@@ -203,29 +176,13 @@ class Client:
             You are not an administrator and cannot use this method.
         """
         data = {"count": count, "expiresAt": f"date={expires_at.isoformat()}" if expires_at is not None else None}
-        async with self._session.post("/api/auth/invite", json=data) as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                # Endpoint can't return a list of invites or just a single one if you only request one
-                # Endpoint *should* return a full Invite, however it only returns three fields currently,
-                # hence the PartialInvite return type.
-                if isinstance(js, list):
-                    return [PartialInvite._from_data(data) for data in js]
+        r = Route("POST", "/api/auth/invite")
+        js = await self.http.request(r, json=data)
 
-                elif isinstance(js, dict):
-                    return [PartialInvite._from_data(js)]
+        if isinstance(js, list):
+            return [PartialInvite._from_data(data) for data in js]
 
-                else:
-                    raise ZiplineError("Got unexpected return type on route /api/auth/invite")
-            elif status == 400:
-                msgjson = await resp.json()
-                msg = msgjson["error"]
-                raise BadRequest(f"400: {msg}")
-            elif status == 403:
-                raise Forbidden("You cannot access this resource.")
-
-        raise UnhandledError(f"Code {status} unhandled in create_invites!")
+        return [PartialInvite._from_data(js)]
 
     async def delete_invite(self, code: str, /) -> Invite:
         """|coro|
@@ -250,17 +207,9 @@ class Client:
             No Invite was found with the provided code.
         """
         query_params = {"code": code}
-        async with self._session.delete("/api/auth/invite", params=query_params) as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return Invite._from_data(js, session=self._session)
-            elif status == 403:
-                raise Forbidden("You cannot access this resource.")
-            elif status == 404:
-                raise NotFound(f"Could not find invite with code '{code}'")
-
-        raise UnhandledError(f"Code {status} unhandled in delete_invite!")
+        r = Route("DELETE", "/api/auth/invite")
+        js = await self.http.request(r, params=query_params)
+        return Invite._from_data(js, http=self.http)
 
     async def get_all_folders(self, *, with_files: bool = False) -> List[Folder]:
         """|coro|
@@ -280,13 +229,10 @@ class Client:
         query_params = {}
         if with_files:
             query_params["files"] = int(with_files)
-        async with self._session.get("/api/user/folders", params=query_params) as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return [Folder._from_data(data, session=self._session) for data in js]
 
-        raise UnhandledError(f"Code {status} unhandled in get_all_folders!")
+        r = Route("GET", "/api/user/folders")
+        js = await self.http.request(r, params=query_params)
+        return [Folder._from_data(data, http=self.http) for data in js]
 
     async def create_folder(self, name: str, /, *, files: Optional[List[File]] = None) -> Folder:
         """|coro|
@@ -311,17 +257,9 @@ class Client:
             The server could not process the request.
         """
         data = {"name": name, "add": [file.id for file in files] if files is not None else None}
-        async with self._session.post("/api/user/folders", json=data) as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return Folder._from_data(js, session=self._session)
-            elif status == 400:
-                msgjson = await resp.json()
-                msg = msgjson["error"]
-                raise BadRequest(f"400: {msg}")
-
-        raise UnhandledError(f"Code {status} unhandled in create_folder!")
+        r = Route("POST", "/api/user/folders/")
+        js = await self.http.request(r, json=data)
+        return Folder._from_data(js, http=self.http)
 
     async def get_folder(self, id: int, /, *, with_files: bool = False) -> Folder:
         """|coro|
@@ -350,17 +288,10 @@ class Client:
         query_params = {}
         if with_files:
             query_params["files"] = int(with_files)
-        async with self._session.get(f"/api/user/folders/{id}", params=query_params) as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return Folder._from_data(js, session=self._session)
-            elif status == 403:
-                raise Forbidden("You do not have access to that folder.")
-            elif status == 404:
-                raise NotFound(f"Folder with id {id} not found.")
 
-        raise UnhandledError(f"Code {status} unhandled in create_folder!")
+        r = Route("GET", f"/api/user/folders/{id}")
+        js = await self.http.request(r, params=query_params)
+        return Folder._from_data(js, http=self.http)
 
     async def get_user(self, id: int, /) -> User:
         """|coro|
@@ -384,17 +315,9 @@ class Client:
         NotFound
             A user with that id could not be found
         """
-        async with self._session.get(f"/api/user/{id}") as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return User._from_data(js, session=self._session)
-            elif status == 403:
-                raise Forbidden("You cannot access this resource.")
-            elif status == 404:
-                raise NotFound(f"Could not find a user with id {id}")
-
-        raise UnhandledError(f"Code {status} unhandled in get_user!")
+        r = Route("GET", f"/api/user/{id}")
+        js = await self.http.request(r)
+        return User._from_data(js, http=self.http)
 
     # TODO methods for /api/user/export
 
@@ -408,13 +331,9 @@ class Client:
         List[:class:`~zipline.models.File`]
             The returned Files
         """
-        async with self._session.get("/api/user/files") as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return [File._from_data(data, session=self._session) for data in js]
-
-        raise UnhandledError(f"Code {status} unhandled in get_all_files !")
+        r = Route("GET", "/api/user/files")
+        js = await self.http.request(r)
+        return [File._from_data(data, http=self.http) for data in js]
 
     async def delete_all_files(self) -> int:
         """|coro|
@@ -427,15 +346,9 @@ class Client:
             The number of removed :class:`~zipline.models.File`'s
         """
         data = {"all": True}
-        async with self._session.delete("/api/user/files", json=data) as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return js["count"]
-            elif status >= 500:
-                raise ServerError("Unhandled exception on the server.")
-
-        raise UnhandledError(f"Code {status} unhandled in delete_all_files!")
+        r = Route("DELETE", "/api/user/files")
+        js = await self.http.request(r, json=data)
+        return js["count"]
 
     async def get_recent_files(self, *, amount: int = 4, filter: Literal["all", "media"] = "all") -> List[File]:
         """|coro|
@@ -463,13 +376,9 @@ class Client:
             raise ValueError("Amount must be within 1 <= amount <= 50")
 
         query_params = {"take": amount, "filter": filter}
-        async with self._session.get("/api/user/recent", params=query_params) as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return [File._from_data(data, session=self._session) for data in js]
-
-        raise UnhandledError(f"Code {status} unhandled in get_recent_files!")
+        r = Route("GET", "/api/user/recent")
+        js = await self.http.request(r, params=query_params)
+        return [File._from_data(data, http=self.http) for data in js]
 
     async def get_all_shortened_urls(self) -> List[ShortenedURL]:
         """|coro|
@@ -481,13 +390,9 @@ class Client:
         List[:class:`~zipline.models.ShortenedURL`]
             The requested shortened urls.
         """
-        async with self._session.get("/api/user/urls") as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return [ShortenedURL._from_data(data, session=self._session) for data in js]
-
-        raise UnhandledError(f"Code {status} unhandled in get_all_urls!")
+        r = Route("GET", "/api/user/urls")
+        js = await self.http.request(r)
+        return [ShortenedURL._from_data(data, http=self.http) for data in js]
 
     async def shorten_url(
         self,
@@ -529,23 +434,16 @@ class Client:
         if max_views is not None and max_views < 0:
             raise ValueError("max_views must be greater than or equal to 0")
 
-        headers = {"Zws": "true" if zero_width_space else "", "Max-Views": str(max_views) if max_views is not None else ""}
+        headers = {
+            "Zws": "true" if zero_width_space else "",
+            "Max-Views": str(max_views) if max_views is not None else "",
+        }
 
         data = {"url": original_url, "vanity": vanity}
 
-        async with self._session.post("/api/shorten", headers=headers, json=data) as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return js["url"]
-            elif status == 400:
-                msgjs = await resp.json()
-                msg = msgjs["error"]
-                raise BadRequest(f"400: {msg}")
-            elif status == 401:
-                raise NotAuthenticated("Auth header incorrect.")
-
-        raise UnhandledError(f"Code {status} unhandled in shorten_url!")
+        r = Route("POST", "/api/shorten")
+        js = await self.http.request(r, headers=headers, json=data)
+        return js["url"]
 
     async def get_all_users(self) -> List[User]:
         """|coro|
@@ -562,15 +460,9 @@ class Client:
         Forbidden
             You are not an administrator and cannot use this method.
         """
-        async with self._session.get("/api/users") as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return [User._from_data(data, session=self._session) for data in js]
-            elif status == 403:
-                raise Forbidden("You cannot access this resource.")
-
-        raise UnhandledError(f"Code {status} unhandled in get_all_users!")
+        r = Route("GET", "/api/users")
+        js = await self.http.request(r)
+        return [User._from_data(data, http=self.http) for data in js]
 
     # TODO /api/stats methods
 
@@ -671,25 +563,16 @@ class Client:
         formdata = aiohttp.FormData()
         formdata.add_field("file", payload.data, filename=payload.filename, content_type=payload.mimetype)
 
-        async with self._session.post("/api/upload", headers=headers, data=formdata) as resp:
-            status = resp.status
-            if status == 200:
-                js = await resp.json()
-                return UploadResponse._from_data(js)
-
-            elif status == 400:
-                js = await resp.json()
-                err_message = js["error"]
-                raise BadRequest(f"400: {err_message}")
-
-            elif status >= 500:
-                raise ServerError(f"Server responded with a {status} response code.")
-
-        raise UnhandledError(f"Code {status} not handled in upload_file!")
+        r = Route("POST", "/api/upload")
+        js = await self.http.request(r, headers=headers, data=formdata)
+        return UploadResponse._from_data(js)
 
     async def close(self) -> None:
         """Gracefully close the client."""
-        await self._session.close()
+        session = self.http.session
+
+        if session is not None:
+            await session.close()
 
     async def __aenter__(self) -> Self:
         return self

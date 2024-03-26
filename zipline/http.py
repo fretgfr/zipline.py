@@ -54,7 +54,7 @@ class Route:
 class HTTPClient:
     def __init__(self, base_url: str, token: str, session: Optional[aiohttp.ClientSession] = None):
         url = URL(base_url)
-        self.base_url = f"{url.scheme}://{url.host}/"
+        self.base_url = f"{url.scheme}://{url.host}"
 
         self.token = token
         self.session = session

@@ -563,12 +563,6 @@ class Client:
         formdata = aiohttp.FormData()
         formdata.add_field("file", payload.data, filename=payload.filename, content_type=payload.mimetype)
 
-        #
-        # TODO: For some reason this errors saying that the formdata was already used. I have no fucking idea why.
-        # Or sometimes on macos it gives an sslv3 error instead. Why? I DON'T FUCKING KNOW.
-        #
-        # Making this the way that it was before has no problem.
-        #
         r = Route("POST", "/api/upload")
         js = await self.http.request(r, headers=headers, data=formdata)
         return UploadResponse._from_data(js)

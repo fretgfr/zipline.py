@@ -52,12 +52,14 @@ class Route:
 
 
 class HTTPClient:
+    """Handles requests to the API, should not be used externally."""
+
     def __init__(self, base_url: str, token: str, session: Optional[aiohttp.ClientSession] = None):
         url = URL(base_url)
         self.base_url = f"{url.scheme}://{url.host}"
 
         self.token = token
-        self.session = session
+        self.session: aiohttp.ClientSession = session or aiohttp.ClientSession()
 
         self.user_agent = f"zipline.py v{__version__} - Python-{python_version()} aiohttp-{aiohttp.__version__}"
 

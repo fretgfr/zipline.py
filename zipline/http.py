@@ -32,7 +32,7 @@ from yarl import URL
 from .errors import BadRequest, Forbidden, NotAuthenticated, NotFound, ServerError, UnhandledError, ZiplineError
 from .meta import __version__
 
-_HTTP_METHOD = Literal["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "TRACE", "CONNECT", "OPTIONS"]
+HTTP_METHOD = Literal["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "TRACE", "CONNECT", "OPTIONS"]
 
 
 def to_json(string: str) -> Dict[Any, Any]:
@@ -48,7 +48,7 @@ class Route:
 
     __slots__ = ("method", "path")
 
-    def __init__(self, method: _HTTP_METHOD, path: str) -> None:
+    def __init__(self, method: HTTP_METHOD, path: str) -> None:
         self.method = method
         self.path = path
 

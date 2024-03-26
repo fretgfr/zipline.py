@@ -575,10 +575,7 @@ class Client:
 
     async def close(self) -> None:
         """Gracefully close the client."""
-        session = self.http.session
-
-        if session is not None:
-            await session.close()
+        await self.http.close()
 
     async def __aenter__(self) -> Self:
         return self

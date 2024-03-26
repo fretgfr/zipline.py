@@ -49,6 +49,15 @@ class Route:
     __slots__ = ("method", "path")
 
     def __init__(self, method: HTTP_METHOD, path: str) -> None:
+        """An API Route definition.
+
+        Parameters
+        ----------
+        method : HTTP_METHOD
+            The method the route requires.
+        path : str
+            The route's path.
+        """
         self.method = method
         self.path = path
 

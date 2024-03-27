@@ -8,7 +8,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath('..'))
 
-from zipline import __version__, __author__, __title__, __copyright__
+from zipline.meta import __author__, __copyright__, __title__, __version__
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -26,7 +26,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx'
-] 
+]
 
 intersphinx_mapping = {
   'py': ('https://docs.python.org/3', None),

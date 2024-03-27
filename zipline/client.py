@@ -30,16 +30,7 @@ import aiohttp
 
 from .enums import NameFormat
 from .http import HTTPClient, Route
-from .models import (
-    File,
-    FileData,
-    Folder,
-    Invite,
-    PartialInvite,
-    ShortenedURL,
-    UploadResponse,
-    User,
-)
+from .models import File, FileData, Folder, Invite, PartialInvite, ShortenedURL, UploadResponse, User
 from .utils import to_iso_format, utcnow
 
 if TYPE_CHECKING:
@@ -169,6 +160,9 @@ class Client:
             The number of invites to create, by default 1
         expires_at: Optional[:class:`datetime.datetime`]
             When the created invite(s) should expire. Defaults to 24 hours from creation.
+
+            .. versionchanged:: 0.17.0
+                Added default expiration of 24 hours.
 
         Returns
         -------

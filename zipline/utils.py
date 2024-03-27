@@ -23,18 +23,7 @@ SOFTWARE.
 import datetime
 from itertools import islice
 from operator import attrgetter
-from typing import (
-    Any,
-    AsyncIterable,
-    Coroutine,
-    Generator,
-    Iterable,
-    Optional,
-    Tuple,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import Any, AsyncIterable, Coroutine, Generator, Iterable, Optional, Tuple, TypeVar, Union, overload
 
 __all__ = (
     "as_chunks",
@@ -73,7 +62,7 @@ def as_chunks(iterable: Iterable[T], n: int) -> Generator[Tuple[T, ...], None, N
 
     Parameters
     ----------
-    iterable : Iterable[T]
+    iterable : :class:`collections.abc.Iterable`
         The iterable to batch
     n : int
         The number of elements per generated tuple.

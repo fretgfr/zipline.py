@@ -57,6 +57,17 @@ zipline.enums module
    :members:
    :show-inheritance:
 
+zipline.utils module
+--------------------
+
+.. currentmodule:: zipline.enums
+
+.. autofunction:: zipline.utils.get
+
+.. autofunction:: zipline.utils.utcnow
+
+.. autofunction:: zipline.utils.as_chunks
+
 
 zipline.errors module
 ---------------------

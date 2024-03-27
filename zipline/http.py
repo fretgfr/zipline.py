@@ -119,7 +119,7 @@ class HTTPClient:
                 raise Forbidden("You cannot access this resource.")
             elif status == 404:
                 raise NotFound(f"Requested resource not found.")
-            elif status >= 405:
+            elif 405 <= status < 500:
                 raise ZiplineError(f"{status}: {error}")
             elif status >= 500:
                 raise ServerError(f"{status}")

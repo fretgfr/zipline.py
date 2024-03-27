@@ -27,6 +27,7 @@ async def main():
     # to implement your own behavior.
     discord.utils.setup_logging()
 
+    # 3.9+ syntax
     async with (
         zipline.Client("your_zipline_site.com", "your_zipline_token") as zipline_client,
         MyBot("?", zipline_client=zipline_client, intents=intents) as bot,

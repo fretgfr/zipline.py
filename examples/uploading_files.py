@@ -19,10 +19,7 @@ async def main():
 
         # upload_file lets you set a number of options, such as the file name format,
         # a password, expiration date, number of views, and compression ratio
-        await client.upload_file(
-            upload_data,
-            format=zipline.NameFormat.uuid
-        )
+        await client.upload_file(upload_data, format=zipline.NameFormat.uuid)
 
         await client.upload_file(
             in_memory_data,
@@ -30,7 +27,6 @@ async def main():
             password="supersecurepassword",
             max_views=2,
         )
-
 
 
 if __name__ == "__main__":

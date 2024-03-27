@@ -22,16 +22,25 @@ SOFTWARE.
 
 from __future__ import annotations
 
-from datetime import datetime
+import datetime
 from types import TracebackType
 from typing import TYPE_CHECKING, List, Literal, Optional, Type, Union
 
 import aiohttp
 
-from .enums import *
-from .errors import *
+from .enums import NameFormat
 from .http import HTTPClient, Route
-from .models import *
+from .models import (
+    File,
+    FileData,
+    Folder,
+    Invite,
+    PartialInvite,
+    ShortenedURL,
+    UploadResponse,
+    User,
+)
+from .utils import to_iso_format, utcnow
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -146,10 +155,10 @@ class Client:
             You are not an administrator and do not have permission to access this resource.
         """
         r = Route("GET", "/api/auth/invite")
-        data = await self.http.request(r)
-        return [Invite._from_data(data, http=self.http)]
+        js = await self.http.request(r)
+        return [Invite._from_data(data, http=self.http) for data in js]
 
-    async def create_invites(self, *, count: int = 1, expires_at: Optional[datetime] = None) -> List[PartialInvite]:
+    async def create_invites(self, *, count: int = 1, expires_at: Optional[datetime.datetime] = None) -> List[PartialInvite]:
         """|coro|
 
         Creates user invites.
@@ -159,7 +168,7 @@ class Client:
         count: :class:`int`
             The number of invites to create, by default 1
         expires_at: Optional[:class:`datetime.datetime`]
-            When the created invite(s) should expire, by default None
+            When the created invite(s) should expire. Defaults to 24 hours from creation.
 
         Returns
         -------
@@ -175,14 +184,12 @@ class Client:
         Forbidden
             You are not an administrator and cannot use this method.
         """
-        data = {"count": count, "expiresAt": f"date={expires_at.isoformat()}" if expires_at is not None else None}
+        expires_at = expires_at or (utcnow() + datetime.timedelta(hours=24))
+        data = {"count": count, "expiresAt": f"date={to_iso_format(expires_at)}"}
+
         r = Route("POST", "/api/auth/invite")
         js = await self.http.request(r, json=data)
-
-        if isinstance(js, list):
-            return [PartialInvite._from_data(data) for data in js]
-
-        return [PartialInvite._from_data(js)]
+        return [PartialInvite._from_data(data) for data in js]
 
     async def delete_invite(self, code: str, /) -> Invite:
         """|coro|
@@ -474,7 +481,7 @@ class Client:
         *,
         format: NameFormat = NameFormat.uuid,
         compression_percent: int = 0,
-        expiry: Optional[datetime] = None,
+        expiry: Optional[datetime.datetime] = None,
         password: Optional[str] = None,
         zero_width_space: bool = False,
         embed: bool = False,

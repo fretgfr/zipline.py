@@ -22,17 +22,15 @@ SOFTWARE.
 
 from __future__ import annotations
 
+import datetime
 import io
 import mimetypes
 import os
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
-import aiohttp
-
-from .errors import BadRequest, NotFound, UnhandledError
 from .http import HTTPClient, Route
+from .utils import parse_iso_timestamp
 
 __all__ = (
     "File",
@@ -46,7 +44,7 @@ __all__ = (
 )
 
 
-@dataclass(slots=True)
+@dataclass
 class File:
     """Represents a file stored on Zipline.
 
@@ -78,9 +76,25 @@ class File:
         The original_name of the File. None if this information wasn't kept on upload.
     """
 
+    __slots__ = (
+        "http",
+        "created_at",
+        "expires_at",
+        "name",
+        "mimetype",
+        "id",
+        "favorite",
+        "views",
+        "folder_id",
+        "max_views",
+        "size",
+        "url",
+        "original_name",
+    )
+
     http: HTTPClient
-    created_at: datetime
-    expires_at: Optional[datetime]
+    created_at: datetime.datetime
+    expires_at: Optional[datetime.datetime]
     name: str
     mimetype: str
     id: int
@@ -95,9 +109,9 @@ class File:
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> File:
         expires_at = data.get("expiresAt", None)
-        expires_at_dt = datetime.fromisoformat(expires_at) if expires_at is not None else None
+        expires_at_dt = parse_iso_timestamp(expires_at) if expires_at is not None else None
         fields = {
-            "created_at": datetime.fromisoformat(data["createdAt"]),
+            "created_at": parse_iso_timestamp(data["createdAt"]),
             "expires_at": expires_at_dt,
             "name": data["name"],
             "mimetype": data["mimetype"],
@@ -170,7 +184,7 @@ class File:
         return f"{self.http.base_url}{self.url}"
 
 
-@dataclass(slots=True)
+@dataclass
 class User:
     """Represents a Zipline User.
 
@@ -201,6 +215,21 @@ class User:
     domains: List[:class:`str`]
         List of domains the User has configured.
     """
+
+    __slots__ = (
+        "http",
+        "id",
+        "username",
+        "avatar",
+        "token",
+        "administrator",
+        "super_admin",
+        "system_theme",
+        "embed",
+        "ratelimit",
+        "totp_secret",
+        "domains",
+    )
 
     http: HTTPClient
     id: int
@@ -234,7 +263,7 @@ class User:
         return cls(http=http, **fields)
 
 
-@dataclass(slots=True)
+@dataclass
 class PartialInvite:
     """Represents a partial Zipline invite. This is returned by Client.create_invites.
 
@@ -248,22 +277,24 @@ class PartialInvite:
         When this invite expires. None if the invite does not expire.
     """
 
+    __slots__ = ("code", "created_by_id", "expires_at")
+
     code: str
     created_by_id: int
-    expires_at: Optional[datetime]
+    expires_at: Optional[datetime.datetime]
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /) -> PartialInvite:
         fields = {
             "code": data["code"],
             "created_by_id": data["createdById"],
-            "expires_at": datetime.fromisoformat(data["expiresAt"]) if data.get("expiresAt") is not None else None,
+            "expires_at": parse_iso_timestamp(data["expiresAt"]) if data.get("expiresAt") is not None else None,
         }
 
         return cls(**fields)
 
 
-@dataclass(slots=True)
+@dataclass
 class Invite:
     """Represents a Zipline invite.
 
@@ -283,11 +314,21 @@ class Invite:
         The id of the User that created this Invite.
     """
 
+    __slots__ = (
+        "http",
+        "code",
+        "id",
+        "created_at",
+        "expires_at",
+        "used",
+        "created_by_id",
+    )
+
     http: HTTPClient
     code: str
     id: int
-    created_at: datetime
-    expires_at: Optional[datetime]
+    created_at: datetime.datetime
+    expires_at: Optional[datetime.datetime]
     used: bool
     created_by_id: int
 
@@ -330,7 +371,7 @@ class Invite:
         return Invite._from_data(js, http=self.http)
 
 
-@dataclass(slots=True)
+@dataclass
 class Folder:
     """Represents a Zipline folder.
 
@@ -355,12 +396,24 @@ class Folder:
     """
 
     # TODO FOLDER SPECIFIC ACTIONS FROM "/api/user/folders/[id]" should be implemented here
+
+    __slots__ = (
+        "http",
+        "id",
+        "name",
+        "user_id",
+        "created_at",
+        "updated_at",
+        "files",
+        "public",
+    )
+
     http: HTTPClient
     id: int
     name: str
     user_id: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     files: List[File] | None
     public: bool
 
@@ -371,8 +424,8 @@ class Folder:
             "id": data["id"],
             "name": data["name"],
             "user_id": data["userId"],
-            "created_at": datetime.fromisoformat(data["createdAt"]),
-            "updated_at": datetime.fromisoformat(data["updatedAt"]),
+            "created_at": parse_iso_timestamp(data["createdAt"]),
+            "updated_at": parse_iso_timestamp(data["updatedAt"]),
             "files": [File._from_data(f, http=http) for f in files] if files is not None else None,
             "public": data["public"],
         }
@@ -431,7 +484,7 @@ class Folder:
         return f"{self.http.base_url}/folder/{self.id}"
 
 
-@dataclass(slots=True)
+@dataclass
 class ShortenedURL:
     """Represents a shortened url on Zipline.
 
@@ -453,8 +506,19 @@ class ShortenedURL:
         The url path to use this. Note this does not include the base url.
     """
 
+    __slots__ = (
+        "http",
+        "created_at",
+        "id",
+        "destination",
+        "vanity",
+        "views",
+        "max_views",
+        "url",
+    )
+
     http: HTTPClient
-    created_at: datetime
+    created_at: datetime.datetime
     id: int
     destination: str
     vanity: Optional[str]
@@ -465,7 +529,7 @@ class ShortenedURL:
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> ShortenedURL:
         fields = {
-            "created_at": datetime.fromisoformat(data["createdAt"]),
+            "created_at": parse_iso_timestamp(data["createdAt"]),
             "id": data["id"],
             "destination": data["destination"],
             "vanity": data.get("vanity"),
@@ -490,7 +554,7 @@ class ShortenedURL:
         await self.http.request(r, json=data)
 
 
-@dataclass(slots=True)
+@dataclass
 class UploadResponse:
     """Represents a response to a File upload.
 
@@ -504,8 +568,10 @@ class UploadResponse:
         Whether gps data was removed from the uploads.
     """
 
+    __slots__ = ("file_urls", "expires_at", "removed_gps")
+
     file_urls: List[str]
-    expires_at: Optional[datetime]
+    expires_at: Optional[datetime.datetime]
     removed_gps: Optional[bool]
 
     @classmethod
@@ -513,7 +579,7 @@ class UploadResponse:
         expires_at = data.get("expiresAt")
         fields = {
             "file_urls": data["files"],
-            "expires_at": datetime.fromisoformat(expires_at) if expires_at is not None else None,
+            "expires_at": parse_iso_timestamp(expires_at) if expires_at is not None else None,
             "removed_gps": data.get("removed_gps"),
         }
 
@@ -566,5 +632,7 @@ class FileData:
         self.filename = filename
         self.mimetype = mimetype or (mimetypes.guess_type(filename)[0] if filename else None)
 
+        if self.mimetype is None:
+            raise TypeError("could not determine mimetype of file given")
         if self.mimetype is None:
             raise TypeError("could not determine mimetype of file given")

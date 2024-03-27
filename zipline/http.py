@@ -75,8 +75,7 @@ class HTTPClient:
         self.user_agent = f"zipline.py v{__version__} - Python-{python_version()} aiohttp-{aiohttp.__version__}"
 
     async def close(self) -> None:
-        if self.session is not None:
-            await self.session.close()
+        await self.session.close()
 
     async def _json_text_or_bytes(self, response: aiohttp.ClientResponse) -> Union[Dict[str, Any], str, bytes]:
         content_type = response.headers.get("Content-Type")
@@ -92,9 +91,6 @@ class HTTPClient:
         return text
 
     async def request(self, route: Route, **kwargs: Any) -> Any:
-        if self.session is None:
-            self.session = aiohttp.ClientSession()
-
         method = route.method
         url = f"{self.base_url}{route.path}"
 

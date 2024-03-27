@@ -64,12 +64,12 @@ def as_chunks(iterable: Iterable[T], n: int) -> Generator[Tuple[T, ...], None, N
     ----------
     iterable : :class:`collections.abc.Iterable`
         The iterable to batch
-    n : int
+    n : :class:`int`
         The number of elements per generated tuple.
 
     Raises
     ------
-    ValueError
+    :class:`ValueError`
         At least one result must be returned per group.
     """
     if n < 1:

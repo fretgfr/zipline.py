@@ -644,8 +644,6 @@ class FileData:
 
         if self.mimetype is None:
             raise TypeError("could not determine mimetype of file given")
-        if self.mimetype is None:
-            raise TypeError("could not determine mimetype of file given")
 
 
 @dataclass

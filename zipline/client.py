@@ -30,7 +30,7 @@ import aiohttp
 
 from .enums import NameFormat
 from .http import HTTPClient, Route
-from .models import File, FileData, Folder, Invite, PartialInvite, ShortenedURL, UploadResponse, User
+from .models import File, FileData, Folder, Invite, PartialInvite, ServerVersionInfo, ShortenedURL, UploadResponse, User
 from .utils import to_iso_format, utcnow
 
 if TYPE_CHECKING:
@@ -68,6 +68,20 @@ class Client:
         """
         self.server_url = server_url
         self.http = HTTPClient(server_url, token)
+
+    async def get_version(self) -> ServerVersionInfo:
+        """|coro|
+
+        Gets the Zipline server version information
+
+        Returns
+        -------
+        :class:`~zipline.models.ServerVersionInfo`
+            The version information for the server.
+        """
+        r = Route("GET", "/api/version")
+        js = await self.http.request(r)
+        return ServerVersionInfo._from_data(js)
 
     async def create_user(self, *, username: str, password: str, administrator: bool = False) -> User:
         """|coro|

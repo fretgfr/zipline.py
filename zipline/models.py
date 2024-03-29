@@ -30,7 +30,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 
 from .http import HTTPClient, Route
-from .utils import parse_iso_timestamp
+from .utils import parse_iso_timestamp, safe_get
 
 __all__ = (
     "File",
@@ -636,3 +636,30 @@ class FileData:
             raise TypeError("could not determine mimetype of file given")
         if self.mimetype is None:
             raise TypeError("could not determine mimetype of file given")
+
+
+@dataclass
+class ServerVersionInfo:
+    __slots__ = (
+        "is_upstream",
+        "update_to_type",
+        "stable_version",
+        "upstream_version",
+        "current_version",
+    )
+
+    is_upstream: bool
+    update_to_type: str
+    stable_version: str
+    upstream_version: str
+    current_version: str
+
+    @classmethod
+    def _from_data(cls, data: Dict[str, Any], /) -> ServerVersionInfo:
+        is_upstream = data.get("isUpstream")
+        update_to_type = data.get("updateToType")
+        stable_version = safe_get(data, "versions", "stable")
+        upstream_version = safe_get(data, "versions", "upstream")
+        current_version = safe_get(data, "versions", "current")
+
+        return cls(is_upstream, update_to_type, stable_version, upstream_version, current_version)  # type: ignore

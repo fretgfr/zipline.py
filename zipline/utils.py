@@ -23,7 +23,7 @@ SOFTWARE.
 import datetime
 from itertools import islice
 from operator import attrgetter
-from typing import Any, AsyncIterable, Coroutine, Generator, Iterable, Optional, Tuple, TypeVar, Union, overload
+from typing import Any, AsyncIterable, Coroutine, Dict, Generator, Iterable, Optional, Tuple, TypeVar, Union, overload
 
 __all__ = (
     "as_chunks",
@@ -157,3 +157,41 @@ def get(iterable: _Iter[T], /, **attrs: Any) -> Union[Optional[T], Coro[Optional
         if hasattr(iterable, "__aiter__")  # isinstance(iterable, collections.abc.AsyncIterable) is too slow
         else _get(iterable, **attrs)  # type: ignore
     )
+
+
+def safe_get(dict_: Dict[Any, Any], *keys: Any) -> Optional[Any]:
+    """Safely get a nested key from a dictionary.
+
+    ex.
+    .. code-block:: python3
+
+        d = {
+            'i': 1,
+            'j': {
+                'k': '2'
+            }
+        }
+
+        safe_get(d, 'i')  # -> 1
+        safe_get(d, 'j', 'k')  # -> '2'
+
+
+    Parameters
+    ----------
+    dict_ : Dict[Any, Any]
+        The dictionary to get the key from
+    keys : Any
+        The keys to get from the dictionary. Processed in order.
+
+    Returns
+    -------
+    Optional[Any]
+        The value at the key. None if the key could not be gotten.
+    """
+    for key in keys:
+        try:
+            dict_ = dict_[key]
+        except KeyError:
+            return None
+
+    return dict_

@@ -47,6 +47,10 @@ zipline.models module
    :members:
    :show-inheritance:
 
+.. autoclass:: zipline.models.ServerVersionInfo
+   :members:
+   :show-inheritance:
+
 
 zipline.enums module
 --------------------

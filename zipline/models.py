@@ -587,7 +587,17 @@ class UploadResponse:
 
 
 class FileData:
-    """Used to upload a File to Zipline."""
+    """Used to upload a File to Zipline.
+
+    Attributes
+    ----------
+    data: Union[:class:`str`, :class:`bytes`, :class:`os.PathLike`, :class:`io.BufferedIOBase`]
+        The file or file like object to open.
+    filename: Optional[:class:`str`]
+        The name of the file to be uploaded. Defaults to filename of the given path, if applicable.
+    mimetype: Optional[:class:`str`]
+        The MIME type of the file, if None the lib will attemp to determine it.
+    """
 
     __slots__ = ("filename", "data", "mimetype")
 
@@ -640,6 +650,21 @@ class FileData:
 
 @dataclass
 class ServerVersionInfo:
+    """Information about the current Zipline version.
+
+    Attributes
+    ----------
+    is_upstream: :class:`bool`
+        Whether the version being run is current.
+    update_to_type: :class:`str`
+        The branch being tracked.
+    stable_version: :class:`str`
+        The current stable version of Zipline.
+    upstream_version: :class:`str`
+        The current GitHub version of Zipline.
+    current_version: :class:`str`
+        The version of Zipline installed on this server.
+    """
     __slots__ = (
         "is_upstream",
         "update_to_type",

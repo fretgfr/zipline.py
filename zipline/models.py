@@ -30,7 +30,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 
 from .http import HTTPClient, Route
-from .utils import parse_iso_timestamp, safe_get
+from .utils import _guess_mime, parse_iso_timestamp, safe_get
 
 __all__ = (
     "File",
@@ -617,7 +617,7 @@ class FileData:
         filename: Optional[:class:`str`]
             The name of the file to be uploaded. Defaults to filename of the given path, if applicable.
         mimetype: Optional[:class:`str`]
-            The MIME type of the file, if None the lib will attemp to determine it.
+            The MIME type of the file, if None the lib will attempt to determine it.
 
         Raises
         ------
@@ -633,6 +633,22 @@ class FileData:
         else:
             self.data = open(data, "rb")
 
+        # Mime type determination. Strategy is:
+        #   - an explicitly given type
+        #   - a guessed type based on the filename, if present.
+        #   - a guessed type based on magic bytes
+        #   - application/octet-stream as a fallback.
+        if mimetype is not None:
+            guessed_mime = mimetype
+        elif filename is not None:
+            guessed_mime = mimetypes.guess_type(filename)[0]
+        elif filename is None and mimetype is None:
+            guessed_mime = _guess_mime(self.data.read(16))
+            # back it up again
+            self.data.seek(0)
+
+        self.mimetype = guessed_mime or "application/octet-stream"
+
         if filename is None:
             if isinstance(data, str):
                 _, filename = os.path.split(data)
@@ -640,7 +656,6 @@ class FileData:
                 filename = getattr(data, "name", "untitled")
 
         self.filename = filename
-        self.mimetype = mimetype or (mimetypes.guess_type(filename)[0] if filename else None)
 
         if self.mimetype is None:
             raise TypeError("could not determine mimetype of file given")
@@ -663,6 +678,7 @@ class ServerVersionInfo:
     current_version: :class:`str`
         The version of Zipline installed on this server.
     """
+
     __slots__ = (
         "is_upstream",
         "update_to_type",

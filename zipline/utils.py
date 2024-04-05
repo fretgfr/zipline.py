@@ -195,3 +195,37 @@ def safe_get(dict_: Dict[Any, Any], *keys: Any) -> Optional[Any]:
             return None
 
     return dict_
+
+
+def _guess_mime(data: bytes) -> Optional[str]:
+    """
+    Sourced: https://en.wikipedia.org/wiki/List_of_file_signatures
+
+    Handled types:
+        - jpeg
+        - png
+        - webp
+        - gif
+        - mp4
+        - mkv
+        - mp3
+        - mov
+    """
+    if data[0:3] == b"\xff\xd8\xff" or data[6:10] in (b"JFIF", b"Exif"):
+        return "image/jpeg"
+    elif data.startswith(b"\x89\x50\x4E\x47\x0D\x0A\x1A\x0A"):
+        return "image/png"
+    elif data.startswith(b"RIFF") and data[8:12] == b"WEBP":
+        return "image/webp"
+    elif data.startswith((b"\x47\x49\x46\x38\x37\x61", b"\x47\x49\x46\x38\x39\x61")):
+        return "image/gif"
+    elif data[3:11] in (b"\x66\x74\x79\x70\x4d\x53\x4e\x56", b"\x66\x74\x79\x70\x69\x73\x6f\x6d"):
+        return "video/mp4"
+    elif data[0:4] == b"\x1a\x45\xdf\xa3":
+        return "video/x-matroska"
+    elif data[0:2] in (b"\xff\xfb", b"\xff\xf3", b"\xff\xf2") or data[0:3] == b"\x49\x44\x43":
+        return "audio/mpeg"
+    elif data[0:4] == b"\x6d\x6f\x6f\x76":
+        return "video/quicktime"
+    else:
+        return None

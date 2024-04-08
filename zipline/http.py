@@ -35,12 +35,24 @@ from .meta import __version__
 HTTP_METHOD = Literal["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "TRACE", "CONNECT", "OPTIONS"]
 
 
-def to_json(string: str) -> Dict[Any, Any]:
-    return json.loads(string)
+try:
+    import orjson  # type: ignore
+except ModuleNotFoundError:
+    HAS_ORJSON = False
+    loads = json.loads
+    dumps = json.dumps
+else:
+    HAS_ORJSON = True
+    loads = orjson.loads
+    dumps = orjson.dumps
 
 
-def to_string(data: Dict[Any, Any]) -> str:
-    return json.dumps(data)
+def from_json(string: str) -> Dict[Any, Any]:
+    return loads(string)
+
+
+def to_string(data: Dict[Any, Any]) -> str | bytes:
+    return dumps(data)
 
 
 class Route:
@@ -86,7 +98,7 @@ class HTTPClient:
         text = await response.text(encoding="utf-8")
 
         if content_type == "application/json":
-            return to_json(text)
+            return from_json(text)
 
         return text
 

@@ -30,7 +30,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 
 from .http import HTTPClient, Route
-from .utils import _guess_mime, parse_iso_timestamp, safe_get
+from .utils import guess_mimetype_by_magicnumber, parse_iso_timestamp, safe_get
 
 __all__ = (
     "File",
@@ -643,7 +643,7 @@ class FileData:
         elif filename is not None:
             guessed_mime = mimetypes.guess_type(filename)[0]
         elif filename is None and mimetype is None:
-            guessed_mime = _guess_mime(self.data.read(16))
+            guessed_mime = guess_mimetype_by_magicnumber(self.data.read(16))
             # back it up again
             self.data.seek(0)
 

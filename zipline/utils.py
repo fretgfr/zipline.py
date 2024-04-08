@@ -197,7 +197,7 @@ def safe_get(dict_: Dict[Any, Any], *keys: Any) -> Optional[Any]:
     return dict_
 
 
-def _guess_mime(data: bytes) -> Optional[str]:
+def guess_mimetype_by_magicnumber(data: bytes) -> Optional[str]:
     """
     Sourced: https://en.wikipedia.org/wiki/List_of_file_signatures
 

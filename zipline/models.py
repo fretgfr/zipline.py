@@ -596,7 +596,7 @@ class FileData:
     filename: Optional[:class:`str`]
         The name of the file to be uploaded. Defaults to filename of the given path, if applicable.
     mimetype: Optional[:class:`str`]
-        The MIME type of the file, if None the lib will attemp to determine it.
+        The MIME type of the file, if None the lib will attempt to determine it.
     """
 
     __slots__ = ("filename", "data", "mimetype")

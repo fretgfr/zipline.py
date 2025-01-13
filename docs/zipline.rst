@@ -64,7 +64,7 @@ zipline.enums module
 zipline.utils module
 --------------------
 
-.. currentmodule:: zipline.enums
+.. currentmodule:: zipline.utils
 
 .. autofunction:: zipline.utils.get
 

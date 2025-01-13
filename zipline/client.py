@@ -110,7 +110,7 @@ class Client:
             You are not an administrator and cannot use this method.
         """
         json = {"username": username, "password": password, "administrator": administrator}
-        r = Route("POST", "/api/auth/create")
+        r = Route("POST", "/api/auth/register")
         data = await self.http.request(r, json=json)
         return User._from_data(data, http=self.http)
 

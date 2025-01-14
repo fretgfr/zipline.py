@@ -197,7 +197,7 @@ class Client:
 
         r = Route("POST", "/api/auth/invite")
         js = await self.http.request(r, json=data)
-        return [PartialInvite._from_data(data) for data in js]
+        return [PartialInvite._from_data(data) for data in js] if isinstance(js, list) else [PartialInvite._from_data(js)]
 
     async def delete_invite(self, code: str, /) -> Invite:
         """|coro|

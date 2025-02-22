@@ -524,6 +524,8 @@ class Client:
         :class:`~zipline.models.URL`
             The most recent information about the deleted url.
 
+        Raises
+        ------
         Forbidden
             You do not have access to this url.
         NotFound

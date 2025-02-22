@@ -58,7 +58,7 @@ JSON = Union[Dict[str, Any], List[Any], int, str, float, bool, Type[None]]
 
 
 @dataclass
-class File:  # DONE
+class File:
     """
     Represents a file stored on Zipline.
 
@@ -375,7 +375,7 @@ class File:  # DONE
 
 
 @dataclass
-class Folder:  # DONE
+class Folder:
     """
     Represents a Folder on Zipline.
 
@@ -547,7 +547,7 @@ class Folder:  # DONE
 
 
 @dataclass
-class User:  # MOSTLY DONE: # TODO repr the UserViewSettings | Maybe implement an Avatar class that decodes the b64?
+class User:  # TODO Maybe implement an Avatar class that decodes the b64?
     """
     Represents a Zipline user.
 
@@ -626,7 +626,7 @@ class User:  # MOSTLY DONE: # TODO repr the UserViewSettings | Maybe implement a
             parse_iso_timestamp(data["createdAt"]),
             parse_iso_timestamp(data["updatedAt"]),
             UserRole(data["role"]),
-            UserViewSettings._from_data(data["view"]) if "view" in data and data['view'] is not None else None,
+            UserViewSettings._from_data(data["view"]) if "view" in data and data["view"] is not None else None,
             data["sessions"],
             data["oauthProviders"],
             data.get("totpSecret"),
@@ -728,7 +728,7 @@ class User:  # MOSTLY DONE: # TODO repr the UserViewSettings | Maybe implement a
 
 
 @dataclass
-class InviteUser:  # DONE
+class InviteUser:
     """
     User information provided with an :class:`~zipline.models.Invite`.
 
@@ -778,7 +778,7 @@ class InviteUser:  # DONE
 
 
 @dataclass
-class Invite:  # DONE
+class Invite:
     """
     Represents an invite to a Zipline instance.
 
@@ -882,7 +882,7 @@ class Invite:  # DONE
         return Invite._from_data(js, http=self._http)
 
 
-class TagFile:  # DONE
+class TagFile:
     """
     Partial file given with Tags.
 
@@ -918,7 +918,7 @@ class TagFile:  # DONE
 
 
 @dataclass
-class Tag:  # DONE
+class Tag:
     """
     Represents a tag on Zipline.
 
@@ -1024,7 +1024,7 @@ class Tag:  # DONE
 
 
 @dataclass
-class URL:  # DONE
+class URL:
     """
     Represents a shortened url on Zipline.
 
@@ -1178,7 +1178,7 @@ class URL:  # DONE
 
 
 @dataclass
-class UploadFile:  # DONE
+class UploadFile:
     """
     File data given by the API when a file is uploaded.
 
@@ -1228,7 +1228,7 @@ class UploadFile:  # DONE
 
 
 @dataclass
-class UploadResponse:  # DONE
+class UploadResponse:
     """
     Response given by the API when a file or multiple files are uploaded.
 
@@ -1253,7 +1253,7 @@ class UploadResponse:  # DONE
         )
 
 
-class FileData:  # DONE
+class FileData:
     """
     Used to upload a File to Zipline.
 
@@ -1329,7 +1329,7 @@ class FileData:  # DONE
             raise TypeError("could not determine mimetype of file given")
 
 
-class PartialQuota:  # DONE
+class PartialQuota:
     """
     A partial quota useful for creating a new quota for a :class:`~zipline.models.User`.
 
@@ -1370,7 +1370,7 @@ class PartialQuota:  # DONE
 
 
 @dataclass
-class UserQuota:  # DONE
+class UserQuota:
     """
     Represents a quota assigned to a :class:`~zipline.models.User` in Zipline.
 
@@ -1488,7 +1488,7 @@ class UserQuota:  # DONE
 
 
 @dataclass
-class UserPasskey:  # DONE
+class UserPasskey:
     """
     A passkey a Zipline :class:`~zipline.models.User` has set up.
 
@@ -1536,7 +1536,7 @@ class UserPasskey:  # DONE
 
 
 @dataclass
-class OAuthProvider:  # DONE
+class OAuthProvider:
     """
     Represents an OAuth provider being used by a :class:`~zipline.models.User` on Zipline.
 
@@ -1599,7 +1599,7 @@ class OAuthProvider:  # DONE
         )
 
 
-class Thumbnail:  # DONE
+class Thumbnail:
     """
     Thumbnail data for a Zipline :class:`~zipline.models.File`.
 

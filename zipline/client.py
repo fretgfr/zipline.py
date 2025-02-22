@@ -83,7 +83,7 @@ class Client:
         js = await self.http.request(r)
         return ServerVersionInfo._from_data(js)
 
-    async def get_user_stats(self) -> UserStats:  # DONE
+    async def get_user_stats(self) -> UserStats:
         """|coro|
 
         Retrieve stats about the current user.
@@ -97,7 +97,7 @@ class Client:
         js = await self.http.request(r)
         return UserStats._from_data(js)
 
-    async def create_user(  # DONE
+    async def create_user(
         self,
         *,
         username: str,
@@ -158,7 +158,7 @@ class Client:
         data = await self.http.request(r, json=json)
         return User._from_data(data, http=self.http)
 
-    async def get_user(self, id: str, /) -> User:  # DONE
+    async def get_user(self, id: str, /) -> User:
         """|coro|
 
         Retreive a user with given id.
@@ -184,7 +184,7 @@ class Client:
         js = await self.http.request(r)
         return User._from_data(js, http=self.http)
 
-    async def get_all_users(self) -> List[User]:  # DONE
+    async def get_all_users(self) -> List[User]:
         """|coro|
 
         Gets all users.
@@ -203,7 +203,7 @@ class Client:
         js = await self.http.request(r)
         return [User._from_data(data, http=self.http) for data in js]
 
-    async def delete_user(self, id, /, *, remove_data: bool = True) -> User:  # DONE
+    async def delete_user(self, id, /, *, remove_data: bool = True) -> User:
         """|coro|
 
         Delete a user with given id.
@@ -232,7 +232,7 @@ class Client:
         js = await self.http.request(r, json=data)
         return User._from_data(js, http=self.http)
 
-    async def get_all_invites(self) -> List[Invite]:  # DONE
+    async def get_all_invites(self) -> List[Invite]:
         """|coro|
 
         Retrieves all invites.
@@ -257,7 +257,7 @@ class Client:
         js = await self.http.request(r)
         return [Invite._from_data(data, http=self.http) for data in js]
 
-    async def create_invite(  # DONE
+    async def create_invite(
         self,
         *,
         max_uses: Optional[int] = 1,
@@ -325,7 +325,7 @@ class Client:
         js = await self.http.request(r, json=data)
         return Invite._from_data(js, http=self.http)
 
-    async def delete_invite(self, id: str, /) -> Invite:  # DONE
+    async def delete_invite(self, id: str, /) -> Invite:
         """|coro|
 
         Deletes an invite with given id.
@@ -351,7 +351,7 @@ class Client:
         js = await self.http.request(r)
         return Invite._from_data(js, http=self.http)
 
-    async def get_all_folders(self, *, with_files: bool = True) -> List[Folder]:  # DONE
+    async def get_all_folders(self, *, with_files: bool = True) -> List[Folder]:
         """|coro|
 
         Returns all folders.
@@ -377,7 +377,7 @@ class Client:
 
     async def create_folder(
         self, name: str, /, files: Optional[List[Union[File, str]]] = None, public: bool = False
-    ) -> Folder:  # DONE
+    ) -> Folder:
         """|coro|
 
         Creates a folder.
@@ -411,7 +411,7 @@ class Client:
         js = await self.http.request(r, json=data)
         return Folder._from_data(js, http=self.http)
 
-    async def get_folder(self, id: str, /) -> Folder:  # DONE
+    async def get_folder(self, id: str, /) -> Folder:
         """|coro|
 
         Gets a folder with given id.
@@ -437,7 +437,7 @@ class Client:
         js = await self.http.request(r)
         return Folder._from_data(js, http=self.http)
 
-    async def get_all_urls(self) -> List[URL]:  # DONE
+    async def get_all_urls(self) -> List[URL]:
         """|coro|
 
         Retrieves all shortened urls for your user.
@@ -451,7 +451,7 @@ class Client:
         js = await self.http.request(r)
         return [URL._from_data(data, http=self.http) for data in js]
 
-    async def shorten_url(  # DONE
+    async def shorten_url(
         self,
         original_url: str,
         *,
@@ -514,7 +514,7 @@ class Client:
         js = await self.http.request(r, headers=headers, json=data)
         return URL._from_data(js, http=self.http)
 
-    async def delete_url(self, id: str, /) -> URL:  # DONE
+    async def delete_url(self, id: str, /) -> URL:
         """|coro|
 
         Delete a url by given id.
@@ -540,7 +540,7 @@ class Client:
         js = await self.http.request(r)
         return URL._from_data(js, http=self.http)
 
-    async def get_all_tags(self) -> List[Tag]:  # DONE
+    async def get_all_tags(self) -> List[Tag]:
         """|coro|
 
         Get all tags belonging to the current user.
@@ -554,7 +554,7 @@ class Client:
         js = await self.http.request(r)
         return [Tag._from_data(d, http=self.http) for d in js]
 
-    async def get_tag(self, id: str, /) -> Tag:  # DONE
+    async def get_tag(self, id: str, /) -> Tag:
         """|coro|
 
         Get a tag with given id.
@@ -580,7 +580,7 @@ class Client:
         js = await self.http.request(r)
         return Tag._from_data(js, http=self.http)
 
-    async def delete_tag(self, id: str, /) -> Tag:  # DONE
+    async def delete_tag(self, id: str, /) -> Tag:
         """|coro|
 
         Delete a tag with given id.

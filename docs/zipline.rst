@@ -19,11 +19,15 @@ zipline.models module
    :members:
    :show-inheritance:
 
+.. autoclass:: zipline.models.Folder
+   :members:
+   :show-inheritance:
+
 .. autoclass:: zipline.models.User
    :members:
    :show-inheritance:
 
-.. autoclass:: zipline.models.PartialInvite
+.. autoclass:: zipline.models.InviteUser
    :members:
    :show-inheritance:
 
@@ -31,11 +35,19 @@ zipline.models module
    :members:
    :show-inheritance:
 
-.. autoclass:: zipline.models.Folder
+.. autoclass:: zipline.models.TagFile
    :members:
    :show-inheritance:
 
-.. autoclass:: zipline.models.ShortenedURL
+.. autoclass:: zipline.models.Tag
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.models.URL
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.models.UploadFile
    :members:
    :show-inheritance:
 
@@ -47,7 +59,31 @@ zipline.models module
    :members:
    :show-inheritance:
 
+.. autoclass:: zipline.models.PartialQuota
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.models.UserQuota
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.models.OAuthProvider
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.models.Thumbnail
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.models.UserViewSettings
+   :members:
+   :show-inheritance:
+
 .. autoclass:: zipline.models.ServerVersionInfo
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.models.UserStats
    :members:
    :show-inheritance:
 
@@ -60,6 +96,23 @@ zipline.enums module
 .. autoclass:: zipline.enums.NameFormat
    :members:
    :show-inheritance:
+
+.. autoclass:: zipline.enums.UserRole
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.enums.RecentFilesFilter
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.enums.QuotaType
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.enums.OAuthProviderType
+   :members:
+   :show-inheritance:
+
 
 zipline.utils module
 --------------------
@@ -95,6 +148,10 @@ zipline.errors module
    :show-inheritance:
 
 .. autoclass:: zipline.errors.NotFound
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.errors.RateLimited
    :members:
    :show-inheritance:
 

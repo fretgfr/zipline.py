@@ -24,14 +24,14 @@ from __future__ import annotations
 
 import datetime
 from types import TracebackType
-from typing import TYPE_CHECKING, List, Literal, Optional, Type, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type, Union
 
 import aiohttp
 
-from .enums import NameFormat
+from .enums import NameFormat, RecentFilesFilter
 from .http import HTTPClient, Route
-from .models import File, FileData, Folder, Invite, PartialInvite, ServerVersionInfo, ShortenedURL, UploadResponse, User
-from .utils import to_iso_format, utcnow
+from .models import URL, File, FileData, Folder, Invite, ServerVersionInfo, Tag, UploadResponse, User, UserRole, UserStats
+from .utils import build_avatar_payload, to_iso_format, utcnow
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -69,24 +69,45 @@ class Client:
         self.server_url = server_url
         self.http = HTTPClient(server_url, token)
 
-    async def get_version(self) -> ServerVersionInfo:
+    async def get_version(self) -> ServerVersionInfo:  # Preliminary done, could be redesigned?
         """|coro|
 
         Gets the Zipline server version information
 
         Returns
         -------
-        :class:`~zipline.models.ServerVersionInfo`
+        :class:`str`
             The version information for the server.
         """
         r = Route("GET", "/api/version")
         js = await self.http.request(r)
         return ServerVersionInfo._from_data(js)
 
-    async def create_user(self, *, username: str, password: str, administrator: bool = False) -> User:
+    async def get_user_stats(self) -> UserStats:  # DONE
         """|coro|
 
-        Creates a User.
+        Retrieve stats about the current user.
+
+        Returns
+        -------
+        :class:`~zipline.models.UserStats`
+            Stats for the current user.
+        """
+        r = Route("GET", "/api/user/stats")
+        js = await self.http.request(r)
+        return UserStats._from_data(js)
+
+    async def create_user(  # DONE
+        self,
+        *,
+        username: str,
+        password: str,
+        role: UserRole = UserRole.user,
+        avatar: Optional[Tuple[str, bytes]] = None,
+    ) -> User:
+        """|coro|
+
+        Creates a user.
 
         Parameters
         ----------
@@ -94,234 +115,63 @@ class Client:
             The username of the user to create.
         password: :class:`str`
             The password of the user to create.
-        administrator: Optional[:class:`bool`]
-            Whether this user should be an administrator, by default False
+        role: :class:`~zipline.enums.UserRole`
+            The permissions level of the created User. Only available if used by a Super Admin.
+        avatar: Optional[Tuple[:class:`str`, :class:`bytes`]]
+            If given, a tuple containing a string denoting the MIME type of the data being uploaded and the data itself as bytes.
 
-        Returns
-        -------
-        User
-            The created User.
+            Example:
 
-        Raises
-        ------
-        BadRequest
-            Something went wrong handling the request.
-        Forbidden
-            You are not an administrator and cannot use this method.
-        """
-        json = {"username": username, "password": password, "administrator": administrator}
-        r = Route("POST", "/api/auth/register")
-        data = await self.http.request(r, json=json)
-        return User._from_data(data, http=self.http)
+            .. code:: python3
 
-    async def get_password_protected_image(self, *, id: int, password: str) -> bytes:
-        """|coro|
+                with open('avatar.png', 'rb') as fp:
+                    avatar_bytes = fp.read()
 
-        Retrieves the content of a password protected File.
+                avatar_mime = 'image/png'
 
-        Parameters
-        ----------
-        id: :class:`int`
-            The id of the File to get.
-        password: :class:`str`
-            The password of the File to get.
+                avatar = (avatar_mime, avatar_bytes)
 
-        Returns
-        -------
-        :class:`bytes`
-            The File's content.
-
-        Raises
-        ------
-        BadRequest
-            Something went wrong handling the request.
-        NotFound
-            The File could not be found on the server.
-        """
-        query_params = {"id": id, "password": password}
-        r = Route("GET", "/api/auth/image")
-        return await self.http.request(r, params=query_params)
-
-    async def get_all_invites(self) -> List[Invite]:
-        """|coro|
-
-        Retrieves all Invites.
-
-        Returns
-        -------
-        List[:class:`~zipline.models.Invite`]
-            The invites on the server.
-
-        Raises
-        ------
-        BadRequest
-            Something went wrong handling this request.
-        Forbidden
-            You are not an administrator and do not have permission to access this resource.
-        """
-        r = Route("GET", "/api/auth/invite")
-        js = await self.http.request(r)
-        return [Invite._from_data(data, http=self.http) for data in js]
-
-    async def create_invites(self, *, count: int = 1, expires_at: Optional[datetime.datetime] = None) -> List[PartialInvite]:
-        """|coro|
-
-        Creates user invites.
-
-        Parameters
-        ----------
-        count: :class:`int`
-            The number of invites to create, by default 1
-        expires_at: Optional[:class:`datetime.datetime`]
-            When the created invite(s) should expire. Defaults to 24 hours from creation.
-
-            .. versionchanged:: 0.17.0
-                Added default expiration of 24 hours.
-
-        Returns
-        -------
-        List[:class:`~zipline.models.PartialInvite`]
-            The created invites.
-
-        Raises
-        ------
-        ZiplineError
-            The server returned the invites in an unexpected format.
-        BadRequest
-            The server could not process the request.
-        Forbidden
-            You are not an administrator and cannot use this method.
-        """
-        expires_at = expires_at or (utcnow() + datetime.timedelta(hours=24))
-        data = {"count": count, "expiresAt": f"date={to_iso_format(expires_at)}"}
-
-        r = Route("POST", "/api/auth/invite")
-        js = await self.http.request(r, json=data)
-        return [PartialInvite._from_data(data) for data in js] if isinstance(js, list) else [PartialInvite._from_data(js)]
-
-    async def delete_invite(self, code: str, /) -> Invite:
-        """|coro|
-
-        Deletes an Invite with given code.
-
-        Parameters
-        ----------
-        code: :class:`str`
-            The code of the Invite to delete.
-
-        Returns
-        -------
-        :class:`~zipline.models.Invite`
-            The deleted Invite
-
-        Raises
-        ------
-        Forbidden
-            You are not an administrator and cannot use this method.
-        NotFound
-            No Invite was found with the provided code.
-        """
-        query_params = {"code": code}
-        r = Route("DELETE", "/api/auth/invite")
-        js = await self.http.request(r, params=query_params)
-        return Invite._from_data(js, http=self.http)
-
-    async def get_all_folders(self, *, with_files: bool = False) -> List[Folder]:
-        """|coro|
-
-        Returns all Folders
-
-        Parameters
-        ----------
-        with_files: Optional[:class:`bool`]
-            Whether the retrieved Folder should contain File information, by default False
-
-        Returns
-        -------
-        List[:class:`~zipline.models.Folder`]
-            The retrieved Folders
-        """
-        query_params = {}
-        if with_files:
-            query_params["files"] = int(with_files)
-
-        r = Route("GET", "/api/user/folders")
-        js = await self.http.request(r, params=query_params)
-        return [Folder._from_data(data, http=self.http) for data in js]
-
-    async def create_folder(self, name: str, /, *, files: Optional[List[File]] = None) -> Folder:
-        """|coro|
-
-        Creates a Folder.
-
-        Parameters
-        ----------
-        name: :class:`str`
-            The name of the folder to create.
-        files: Optional[List[:class:`~zipline.models.File`]]
-            Files that should be added to the created folder, by default None
-
-        Returns
-        -------
-        :class:`~zipline.models.Folder`
-            The created Folder
-
-        Raises
-        ------
-        BadRequest
-            The server could not process the request.
-        """
-        data = {"name": name, "add": [file.id for file in files] if files is not None else None}
-        r = Route("POST", "/api/user/folders/")
-        js = await self.http.request(r, json=data)
-        return Folder._from_data(js, http=self.http)
-
-    async def get_folder(self, id: int, /, *, with_files: bool = False) -> Folder:
-        """|coro|
-
-        Gets a folder with a given id.
-
-        Parameters
-        ----------
-        id: :class:`int`
-            The id of the folder to get.
-        with_files: Optional[:class:`bool`]
-            Whether File information should be retrieved, by default False
-
-        Returns
-        -------
-        :class:`~zipline.models.Folder`
-            The requested Folder
-
-        Raises
-        ------
-        Forbidden
-            You do not have access to the Folder requested.
-        NotFound
-            A folder with that id could not be found.
-        """
-        query_params = {}
-        if with_files:
-            query_params["files"] = int(with_files)
-
-        r = Route("GET", f"/api/user/folders/{id}")
-        js = await self.http.request(r, params=query_params)
-        return Folder._from_data(js, http=self.http)
-
-    async def get_user(self, id: int, /) -> User:
-        """|coro|
-
-        Returns a User with the given id.
-
-        Parameters
-        ----------
-        id: :class:`int`
-            The id of the User to get.
+                user = await create_user(
+                    username='Example',
+                    password='s0m3th!ngs3cur3',
+                    avatar=avatar,
+                )
 
         Returns
         -------
         :class:`~zipline.models.User`
-            The retrieved User
+            The created user.
+
+        Raises
+        ------
+        BadRequest
+            Something went wrong handling the request.
+        Forbidden
+            You are not an administrator and cannot use this method.
+        """
+        json = {"username": username, "password": password, "role": role.value}
+
+        if avatar:
+            json["avatar"] = build_avatar_payload(*avatar)
+
+        r = Route("POST", "/api/users")
+        data = await self.http.request(r, json=json)
+        return User._from_data(data, http=self.http)
+
+    async def get_user(self, id: str, /) -> User:  # DONE
+        """|coro|
+
+        Retreive a user with given id.
+
+        Parameters
+        ----------
+        id: :class:`str`
+            The id of the user to get.
+
+        Returns
+        -------
+        :class:`~zipline.models.User`
+            The retrieved user.
 
         Raises
         ------
@@ -330,137 +180,11 @@ class Client:
         NotFound
             A user with that id could not be found
         """
-        r = Route("GET", f"/api/user/{id}")
+        r = Route("GET", f"/api/users/{id}")
         js = await self.http.request(r)
         return User._from_data(js, http=self.http)
 
-    # TODO methods for /api/user/export
-
-    async def get_all_files(self) -> List[File]:
-        """|coro|
-
-        Gets all Files belonging to your user.
-
-        Returns
-        -------
-        List[:class:`~zipline.models.File`]
-            The returned Files
-        """
-        r = Route("GET", "/api/user/files")
-        js = await self.http.request(r)
-        return [File._from_data(data, http=self.http) for data in js]
-
-    async def delete_all_files(self) -> int:
-        """|coro|
-
-        Deletes all of your Files
-
-        Returns
-        -------
-        :class:`int`
-            The number of removed :class:`~zipline.models.File`'s
-        """
-        data = {"all": True}
-        r = Route("DELETE", "/api/user/files")
-        js = await self.http.request(r, json=data)
-        return js["count"]
-
-    async def get_recent_files(self, *, amount: int = 4, filter: Literal["all", "media"] = "all") -> List[File]:
-        """|coro|
-
-        Gets recent files uploaded by you.
-
-        Parameters
-        ----------
-        amount: Optional[:class:`int`]
-            The number of results to return. Must be in 1 <= amount <= 50, by default 4
-        filter: Optional[Literal["all", "media"]]
-            What files to get. "all" to get all Files, "media" to get images/videos/etc., by default "all"
-
-        Returns
-        -------
-        List[:class:`~zipline.models.File`]
-            The requested Files.
-
-        Raises
-        ------
-        ValueError
-            Amount was not within the specified bounds.
-        """
-        if amount < 1 or amount > 50:
-            raise ValueError("Amount must be within 1 <= amount <= 50")
-
-        query_params = {"take": amount, "filter": filter}
-        r = Route("GET", "/api/user/recent")
-        js = await self.http.request(r, params=query_params)
-        return [File._from_data(data, http=self.http) for data in js]
-
-    async def get_all_shortened_urls(self) -> List[ShortenedURL]:
-        """|coro|
-
-        Retrieves all shortened urls for your user.
-
-        Returns
-        -------
-        List[:class:`~zipline.models.ShortenedURL`]
-            The requested shortened urls.
-        """
-        r = Route("GET", "/api/user/urls")
-        js = await self.http.request(r)
-        return [ShortenedURL._from_data(data, http=self.http) for data in js]
-
-    async def shorten_url(
-        self,
-        original_url: str,
-        *,
-        vanity: Optional[str] = None,
-        max_views: Optional[int] = None,
-        zero_width_space: bool = False,
-    ) -> str:
-        """|coro|
-
-        Shortens a url
-
-        Parameters
-        ----------
-        original_url: :class:`str`
-            The url to shorten
-        vanity: Optional[:class:`str`]
-            A vanity name to use. None to shorten normally, by default None
-        max_views: Optional[:class:`int`]
-            The number of times the url can be used before being deleted. None for unlimited uses, by default None
-        zero_width_space: Optional[:class:`bool`]
-            Whether to incude zero width spaces in the returned url, by default False
-
-        Returns
-        -------
-        :class:`str`
-            The shortened url
-
-        Raises
-        ------
-        ValueError
-            Invalid value for max views passed.
-        BadRequest
-            The server could not process your request.
-        NotAuthenticated
-            An incorrect authorization header was passed
-        """
-        if max_views is not None and max_views < 0:
-            raise ValueError("max_views must be greater than or equal to 0")
-
-        headers = {
-            "Zws": "true" if zero_width_space else "",
-            "Max-Views": str(max_views) if max_views is not None else "",
-        }
-
-        data = {"url": original_url, "vanity": vanity}
-
-        r = Route("POST", "/api/shorten")
-        js = await self.http.request(r, headers=headers, json=data)
-        return js["url"]
-
-    async def get_all_users(self) -> List[User]:
+    async def get_all_users(self) -> List[User]:  # DONE
         """|coro|
 
         Gets all users.
@@ -479,11 +203,456 @@ class Client:
         js = await self.http.request(r)
         return [User._from_data(data, http=self.http) for data in js]
 
-    # TODO /api/stats methods
+    async def delete_user(self, id, /, *, remove_data: bool = True) -> User:  # DONE
+        """|coro|
 
-    # TODO /api/exif methods
+        Delete a user with given id.
 
-    async def upload_file(
+        Parameters
+        ----------
+        id: :class:`str`
+            The id of the user to delete.
+        remove_data: :class:`bool`
+            Whether the user's files and urls should be removed, by default True
+
+        Returns
+        -------
+        :class:`~zipline.models.User`
+            The deleted user.
+
+        Raises
+        ------
+        BadRequest
+            Something went wrong handling the request.
+        Forbidden
+            You are not an administrator and cannot use this method.
+        """
+        data = {"delete": remove_data}
+        r = Route("DELETE", f"/api/users/{id}")
+        js = await self.http.request(r, json=data)
+        return User._from_data(js, http=self.http)
+
+    async def get_all_invites(self) -> List[Invite]:  # DONE
+        """|coro|
+
+        Retrieves all invites.
+
+        .. warning::
+
+            This method may retrieve invites for all users, not just the user the token belongs to.
+
+        Returns
+        -------
+        List[:class:`~zipline.models.Invite`]
+            The invites on the server.
+
+        Raises
+        ------
+        BadRequest
+            Something went wrong handling this request.
+        Forbidden
+            You are not an administrator and do not have permission to access this resource.
+        """
+        r = Route("GET", "/api/auth/invites")
+        js = await self.http.request(r)
+        return [Invite._from_data(data, http=self.http) for data in js]
+
+    async def create_invite(  # DONE
+        self,
+        *,
+        max_uses: Optional[int] = 1,
+        expires_at: Optional[Union[datetime.datetime, datetime.timedelta]] = None,
+    ) -> Invite:
+        """|coro|
+
+        Creates an invite.
+
+        .. versionchanged:: 0.21.0
+
+            Removed the count parameter as it's no longer supported.
+            Return type is now a complete Invite object as opposed to a partial model.
+
+
+        Parameters
+        ----------
+        max_uses: Optional[:class:`int`]
+            The number of times the created invite can be used, by default 1.
+            If None is passed the invite will have unlimited uses.
+
+            .. versionadded:: 0.21.0
+        expires_at: Optional[:class:`datetime.datetime`]
+            When the created invite(s) should expire. Defaults to 24 hours from creation.
+
+            .. versionchanged:: 0.21.0
+
+                Default expiration removed.
+                This parameter will now accept a timedelta.
+                If None is passed, the invite will never expire.
+
+        Returns
+        -------
+        :class:`~zipline.models.Invite`
+            The created invite.
+
+        Raises
+        ------
+        ValueError
+            An invalid argument was passed.
+        ZiplineError
+            The server returned the invites in an unexpected format.
+        BadRequest
+            The server could not process the request.
+        Forbidden
+            You are not an administrator and cannot use this method.
+        """
+        if max_uses and not max_uses >= 1:
+            raise ValueError("max_uses must be greater than or equal to 1.")
+
+        if expires_at is None:
+            expiration = "never"
+        elif isinstance(expires_at, datetime.timedelta):
+            future_dt = utcnow() + expires_at
+            expiration = f"date={to_iso_format(future_dt)}"
+        elif isinstance(expires_at, datetime.datetime):
+            expiration = f"date={to_iso_format(expires_at)}"
+
+        data: Dict[str, Union[str, int]] = {"expiresAt": expiration}
+
+        if max_uses is not None:
+            data["maxUses"] = max_uses
+
+        r = Route("POST", "/api/auth/invites")
+        js = await self.http.request(r, json=data)
+        return Invite._from_data(js, http=self.http)
+
+    async def delete_invite(self, id: str, /) -> Invite:  # DONE
+        """|coro|
+
+        Deletes an invite with given id.
+
+        Parameters
+        ----------
+        id: :class:`str`
+            The id of the invite to delete.
+
+        Returns
+        -------
+        :class:`~zipline.models.Invite`
+            The deleted invite.
+
+        Raises
+        ------
+        Forbidden
+            You are not an administrator and cannot use this method.
+        NotFound
+            No invite was found with the provided id.
+        """
+        r = Route("DELETE", f"/api/auth/invites/{id}")
+        js = await self.http.request(r)
+        return Invite._from_data(js, http=self.http)
+
+    async def get_all_folders(self, *, with_files: bool = True) -> List[Folder]:  # DONE
+        """|coro|
+
+        Returns all folders.
+
+        Parameters
+        ----------
+        with_files: Optional[:class:`bool`]
+            Whether the retrieved folder should contain file information, by default True.
+
+        Returns
+        -------
+        List[:class:`~zipline.models.Folder`]
+            The retrieved Folders.
+        """
+
+        params = {}
+        if not with_files:
+            params["noincl"] = "true"
+
+        r = Route("GET", "/api/user/folders")
+        js = await self.http.request(r, params=params)
+        return [Folder._from_data(data, http=self.http) for data in js]
+
+    async def create_folder(self, name: str, /, public: bool = False) -> Folder:  # DONE
+        """|coro|
+
+        Creates a folder.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            The name of the folder to create.
+        public: :class:`bool`
+            Whether the created folder should be public, by default False.
+        files: Optional[List[:class:`~zipline.models.File`]]
+            Files that should be added to the created folder, by default None
+
+            .. versionremoved:: 0.21.0
+
+        Returns
+        -------
+        :class:`~zipline.models.Folder`
+            The created folder.
+
+        Raises
+        ------
+        BadRequest
+            The server could not process the request.
+        """
+        data = {"name": name, "isPublic": public}
+        r = Route("POST", "/api/user/folders")
+        js = await self.http.request(r, json=data)
+        return Folder._from_data(js, http=self.http)
+
+    async def get_folder(self, id: str, /) -> Folder:  # DONE
+        """|coro|
+
+        Gets a folder with given id.
+
+        Parameters
+        ----------
+        id: :class:`int`
+            The id of the folder to get.
+
+        Returns
+        -------
+        :class:`~zipline.models.Folder`
+            The requested folder.
+
+        Raises
+        ------
+        Forbidden
+            You do not have access to the folder requested.
+        NotFound
+            A folder with that id could not be found.
+        """
+        r = Route("GET", f"/api/user/folders/{id}")
+        js = await self.http.request(r)
+        return Folder._from_data(js, http=self.http)
+
+    async def get_all_urls(self) -> List[URL]:  # DONE
+        """|coro|
+
+        Retrieves all shortened urls for your user.
+
+        Returns
+        -------
+        List[:class:`~zipline.models.URL`]
+            The requested shortened urls.
+        """
+        r = Route("GET", "/api/user/urls")
+        js = await self.http.request(r)
+        return [URL._from_data(data, http=self.http) for data in js]
+
+    async def shorten_url(  # DONE
+        self,
+        original_url: str,
+        *,
+        vanity: Optional[str] = None,
+        max_views: Optional[int] = None,
+        password: Optional[str] = None,
+        enabled: bool = True,
+    ) -> URL:
+        """|coro|
+
+        Shortens a url.
+
+        Parameters
+        ----------
+        original_url: :class:`str`
+            The url to shorten.
+        vanity: Optional[:class:`str`]
+            A vanity name to use. None to receive a randomly assigned name.
+        max_views: Optional[:class:`int`]
+            The number of times the url can be used before being deleted. None for unlimited uses, by default None
+        password: Optional[:class:`str`]
+            The password required to use the URL, if given.
+
+            .. versionadded:: 0.21.0
+        enabled: :class:`bool`
+            Whether the url should be enabled for use, by default True.
+
+            .. versionadded:: 0.21.0
+        zero_width_space: Optional[:class:`bool`]
+            Whether to incude zero width spaces in the returned url, by default False
+
+            .. versionremoved:: 0.21.0
+                This is no longer supported by the API.
+
+        Returns
+        -------
+        :class:`str`
+            The shortened url.
+
+        Raises
+        ------
+        ValueError
+            Invalid value for max views passed.
+        BadRequest
+            The server could not process your request.
+        """
+        if max_views is not None and max_views < 0:
+            raise ValueError("max_views must be greater than or equal to 0")
+
+        headers = {}
+
+        if max_views:
+            headers["X-Zipline-Max-Views"] = str(max_views)
+        if password:
+            headers["X-Zipline-Password"] = password
+
+        data = {"url": original_url, "vanity": vanity, "enabled": enabled}
+
+        r = Route("POST", "/api/user/urls")
+        js = await self.http.request(r, headers=headers, json=data)
+        return URL._from_data(js, http=self.http)
+
+    async def delete_url(self, id: str, /) -> URL:  # DONE
+        """|coro|
+
+        Delete a url by given id.
+
+        Parameters
+        ----------
+        id: :class:`str`
+            The id of the URL to delete.
+
+        Returns
+        -------
+        :class:`~zipline.models.URL`
+            The most recent information about the deleted url.
+
+        Forbidden
+            You do not have access to this url.
+        NotFound
+            A url with that id could not be found.
+        """
+        r = Route("DELETE", f"/api/user/urls/{id}")
+        js = await self.http.request(r)
+        return URL._from_data(js, http=self.http)
+
+    async def get_all_tags(self) -> List[Tag]:  # DONE
+        """|coro|
+
+        Get all tags belonging to the current user.
+
+        Returns
+        -------
+        List[:class:`~zipline.models.Tag`]
+            The requested tags.
+        """
+        r = Route("GET", "/api/user/tags")
+        js = await self.http.request(r)
+        return [Tag._from_data(d, http=self.http) for d in js]
+
+    async def get_tag(self, id: str, /) -> Tag:  # DONE
+        """|coro|
+
+        Get a tag with given id.
+
+        Parameters
+        ----------
+        id: :class:`str`
+            The id of the tag to retrieve.
+
+        Returns
+        -------
+        :class:`~zipline.models.Tag`
+            The requested tag.
+
+        Raises
+        ------
+        NotFound
+            A tag with that id was not found.
+        Forbidden
+            You do not have access to this tag.
+        """
+        r = Route("GET", f"/api/user/tags/{id}")
+        js = await self.http.request(r)
+        return Tag._from_data(js, http=self.http)
+
+    async def delete_tag(self, id: str, /) -> Tag:  # DONE
+        """|coro|
+
+        Delete a tag with given id.
+
+        Parameters
+        ----------
+        id: :class:`str`
+            The id of the tag to delete.
+
+        Returns
+        -------
+        :class:`~zipline.models.Tag`
+            The deleted tag.
+
+        Raises
+        ------
+        Forbidden
+            You do not have access to this url.
+        NotFound
+            A url with that id could not be found.
+        """
+        r = Route("DELETE", f"/api/user/tags/{id}")
+        js = await self.http.request(r)
+        return Tag._from_data(js, http=self.http)
+
+    # TODO get_user_files or User.get_files is possible by passing an `id` param to /api/user/files with the value of a user id.
+    async def get_all_files(self) -> List[File]:  # needs to be rethought.
+        """|coro|
+
+        Gets all files belonging to your user.
+
+        Returns
+        -------
+        List[:class:`~zipline.models.File`]
+            The files belonging to your user.
+        """
+        r = Route("GET", "/api/user/files")
+        js = await self.http.request(r)
+        return [File._from_data(data, http=self.http) for data in js]
+
+    async def get_recent_files(
+        self,
+        *,
+        amount: int = 10,
+        filter: RecentFilesFilter = RecentFilesFilter.all,
+    ) -> List[File]:
+        """|coro|
+
+        Gets recent files uploaded by you.
+
+        Parameters
+        ----------
+        amount: Optional[:class:`int`]
+            The number of results to return, by default 10.
+        filter: :class:`~zipline.enums.RecentFilesFilter`
+            What files to get.
+
+            .. versionchanged:: 0.21.0
+
+                This is now controlled by an enum.
+        Returns
+        -------
+        List[:class:`~zipline.models.File`]
+            The requested Files.
+
+        Raises
+        ------
+        ValueError
+            An invalid amount was passed.
+        """
+        if amount < 0:
+            raise ValueError("amount must be greater than zero.")
+
+        query_params = {"take": amount, "filter": filter.value}
+        r = Route("GET", "/api/user/recent")
+        js = await self.http.request(r, params=query_params)
+        return [File._from_data(data, http=self.http) for data in js]
+
+    async def upload_file(  # Preliminary done, maybe not
         self,
         payload: FileData,
         *,
@@ -491,99 +660,116 @@ class Client:
         compression_percent: int = 0,
         expiry: Optional[datetime.datetime] = None,
         password: Optional[str] = None,
-        zero_width_space: bool = False,
-        embed: bool = False,
         max_views: Optional[int] = None,
-        text: bool = False,
         override_name: Optional[str] = None,
         original_name: Optional[str] = None,
-        folder: Optional[Union[Folder, int]] = None,
-    ) -> UploadResponse:
+        folder: Optional[Union[Folder, str]] = None,
+        override_extension: Optional[str] = None,
+    ) -> (
+        UploadResponse
+    ):  # TODO x-zipline-no-json can return only a url, maybe support this with an override? Also, x-zipline-domain?
         """|coro|
 
-        Uploads a File to Zipline
+        Upload a file to Zipline.
 
         Parameters
         ----------
         payload: :class:`~zipline.models.FileData`
-            The file to upload.
+            Data regarding the file to upload.
         format: Optional[:class:`~zipline.enums.NameFormat`]
-            The format of the name to assign to the uploaded File, by default :attr:`~zipline.enums.NameFormat`'s `uuid`.
+            The format of the name to assign to the uploaded file, by default :attr:`~zipline.enums.NameFormat.uuid`.
         compression_percent: Optional[:class:`int`]
-            How compressed should the uploaded File be, by default 0
+            How compressed should the uploaded file be, by default 0.
         expiry: Optional[:class:`datetime.datetime`]
-            When the uploaded File should expire, by default None
+            When the uploaded file should expire, by default None.
         password: Optional[:class:`str`]
-            The password required to view the uploaded File, by default None
+            The password required to view the uploaded File, by default None.
         zero_width_space: Optional[:class:`bool`]
-            Whether to include zero width spaces in the name of the uploaded File, by default False
+            Whether to include zero width spaces in the name of the uploaded File, by default False.
+
+            .. versionremoved:: 0.21.0
+                No longer supported by the API.
         embed: Optional[:class:`bool`]
-            Whether to include embed data for the uploaded File, typically used on Discord, by default False
+            Whether to include embed data for the uploaded File, typically used on Discord, by default False.
+
+            .. versionremoved:: 0.21.0
+                No longer supported by the API.
         max_views: Optional[:class:`int`]
-            The number of times the uploaded File can be viewed before it is deleted, by default None
+            The number of times the uploaded File can be viewed before it is deleted, by default None.
         text: Optional[:class:`bool`]
-            Whether the File is a text file, by default False
+            Whether the File is a text file, by default False.
+
+            .. versionremoved:: 0.21.0
+                No longer supported by the API.
         override_name: Optional[:class:`str`]
-            A name to give the uploaded file. If provided this will override the server generated name, by default None
+            A name to give the uploaded file. If provided this will override the server generated name, by default None.
         original_name: Optional[:class:`str`]
-            The original_name of the file. None to not preserve this data, by default None
-        folder: Optional[Union[:class:`~zipline.models.Folder`, :class:`int`]]
-            The Folder (or it's ID) to place this upload into automatically
+            The original_name of the file. None to not preserve this data, by default None.
+        folder: Optional[Union[:class:`~zipline.models.Folder`, :class:`str`]]
+            The Folder (or it's ID) to place this upload into automatically.
 
             .. versionadded:: 0.15.0
+        override_extension: Optional[:class:`str`]
+            The extension to use for this file instead of the original.
+
+            .. versionadded:: 0.21.0
 
         Returns
         -------
         :class:`~zipline.models.UploadResponse`
-            The uploaded File
+            Information about the file uploaded.
 
         Raises
         ------
         ValueError
-            compression_percent was not in 0 <= compression_percent <= 100
+            compression_percent was not in 0 <= compression_percent <= 100.
         ValueError
-            max_views passed was less than 0
+            max_views passed was less than 0.
         ValueError
-            type passed for folder was incorrect
+            The type of the object passed to the folder parameter was incorrect.
         BadRequest
-            Server could not process the request
+            Server could not process the request.
         ServerError
             The server responded with a 5xx error code.
         """
         if compression_percent < 0 or compression_percent > 100:
             raise ValueError("compression_percent must be between 0 and 100")
 
-        if max_views and max_views < 0:
+        if max_views and max_views <= 0:
             raise ValueError("max_views must be greater than 0")
 
         headers = {
-            "Format": format.value,
-            "Image-Compression-Percent": str(compression_percent),
-            "Expires-At": f"date={expiry.isoformat()}" if expiry is not None else "",
-            "Password": password if password is not None else "",
-            "Zws": "true" if zero_width_space else "",
-            "Embed": "true" if embed else "",
-            "Max-Views": str(max_views) if max_views is not None else "",
-            "UploadText": "true" if text else "",
-            "X-Zipline-Filename": override_name if override_name is not None else "",
-            "Original-Name": original_name if original_name is not None else "",
+            "X-Zipline-Format": format.value,
+            "X-Zipline-Image-Compression-Percent": str(compression_percent),
         }
 
-        if folder is not None:
-            if not isinstance(folder, (Folder, int)):
-                raise ValueError("folder argument must be a Folder or integer")
-
-            headers["X-Zipline-Folder"] = str(folder.id) if isinstance(folder, Folder) else str(folder)
+        if expiry:
+            headers["X-Zipline-Deletes-At"] = f"date={expiry.isoformat()}" if expiry is not None else ""
+        if password:
+            headers["X-Zipline-Password"] = password if password is not None else ""
+        if max_views:
+            headers["X-Zipline-Max-Views"] = str(max_views) if max_views is not None else ""
+        if override_name:
+            headers["X-Zipline-Filename"] = override_name
+        if original_name:
+            headers["X-Zipline-Original-Name"] = original_name
+        if override_extension:
+            headers["X-Zipline-File-Extension"] = override_extension
+        if folder:
+            headers["X-Zipline-Folder"] = folder.id if isinstance(folder, Folder) else folder
 
         formdata = aiohttp.FormData()
         formdata.add_field("file", payload.data, filename=payload.filename, content_type=payload.mimetype)
 
         r = Route("POST", "/api/upload")
         js = await self.http.request(r, headers=headers, data=formdata)
-        return UploadResponse._from_data(js)
+        return UploadResponse._from_data(js, http=self.http)
 
     async def close(self) -> None:
-        """Gracefully close the client."""
+        """|coro|
+
+        Gracefully close the client.
+        """
         await self.http.close()
 
     async def __aenter__(self) -> Self:

@@ -26,6 +26,7 @@ __all__ = (
     "BadRequest",
     "Forbidden",
     "NotFound",
+    "RateLimited",
     "ServerError",
     "NotAuthenticated",
 )
@@ -57,6 +58,12 @@ class Forbidden(ZiplineError):
 
 class NotFound(ZiplineError):
     """Server returned a 404 response."""
+
+    pass
+
+
+class RateLimited(ZiplineError):
+    """Server returned a 429 response."""
 
     pass
 

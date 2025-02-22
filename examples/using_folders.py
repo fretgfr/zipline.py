@@ -9,12 +9,15 @@ async def main():
     async with zipline.Client("your_zipline_site.com", "your_zipline_token") as client:
 
         def file_mimetype(file: zipline.File) -> str:
-            return file.mimetype
+            return file.type
 
         all_files = sorted(await client.get_all_files(), key=file_mimetype)
 
         for mimetype, mime_files in itertools.groupby(all_files, file_mimetype):
-            folder = await client.create_folder(mimetype, files=list(mime_files))
+            folder = await client.create_folder(mimetype)
+
+            for file in mime_files:
+                await folder.add_file(file)
 
             print(f"Created folder with id: {folder.id} for MIME type: {mimetype}")
 

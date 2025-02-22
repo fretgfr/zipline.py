@@ -27,567 +27,1209 @@ import io
 import mimetypes
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
+from .enums import OAuthProviderType, QuotaType, UserRole
 from .http import HTTPClient, Route
-from .utils import guess_mimetype_by_magicnumber, parse_iso_timestamp, safe_get
+from .utils import MISSING, build_avatar_payload, generate_quota_payload, guess_mimetype_by_magicnumber, parse_iso_timestamp
 
 __all__ = (
     "File",
-    "User",
-    "PartialInvite",
-    "Invite",
     "Folder",
-    "ShortenedURL",
+    "User",
+    "InviteUser",
+    "Invite",
+    "TagFile",
+    "Tag",
+    "URL",
+    "UploadFile",
     "UploadResponse",
     "FileData",
+    "PartialQuota",
+    "UserQuota",
+    "OAuthProvider",
+    "Thumbnail",
+    "UserViewSettings",
+    "ServerVersionInfo",
+    "UserStats",
 )
+
+JSON = Union[Dict[str, Any], List[Any], int, str, float, bool, Type[None]]
 
 
 @dataclass
-class File:
-    """Represents a file stored on Zipline.
+class File:  # DONE
+    """
+    Represents a file stored on Zipline.
 
     Attributes
     ----------
+    id: :class:`str`
+        The internal id of the file in Zipline.
     created_at: :class:`datetime.datetime`
-        When the File was created.
-    expires_at: Optional[:class:`datetime.datetime`]
-        When the File expires.
-    name: :class:`str`
-        The name of the File.
-    mimetype: :class:`str`
-        The MIME type of the File.
-    id: :class:`int`
-        The id for the File.
+        When the file was created.
+    updated_at: :class:`datetime.datetime`
+        When the file was last updated.
+    deletes_at: Optional[:class:`datetime.datetime`]
+        The scheduled deletion time of the file, if applicable.
     favorite: :class:`bool`
-        Whether the File is favorited.
-    views: :class:`int`
-        The number of times the File has been viewed.
-    folder_id: Optional[:class:`int`]
-        The id of the Folder this File belongs to, None if the File is not in a Folder.
-    max_views: Optional[:class:`int`]
-        The number of times the File can be viewed before being removed. None if there is no limit.
-    size: :class:`int`
-        The size of the File in bytes.
-    url: :class:`str`
-        The url if the File. Note this does not contain the base url.
+        Whether the file is favorited.
     original_name: Optional[:class:`str`]
-        The original_name of the File. None if this information wasn't kept on upload.
+        The original name of the file, if stored.
+    name: :class:`str`
+        The name of the file.
+    size: :class:`int`
+        The size of the file in bytes.
+    type: :class:`str`
+        The MIME type of the file.
+    views: :class:`int`
+        The number of times the file has been viewed.
+    max_views: Optional[:class:`int`]
+        The maximum number of times the file can be viewed before being removed, if applicable.
+    password: Optional[Union[:class:`str`, :class:`bool`]]
+        Whether the file is password protected.
+    folder_id: Optional[:class:`str`]
+        The id of the :class:`~zipline.models.Folder` that this file resides in, if applicable.
+    thumbnail: Optional[:class:`~zipline.models.Thumbnail`]
+        The thumbnail of the file, if available.
+    tags: List[:class:`~zipline.models.Tag`]
+        The tags applied to the file.
+    url: Optional[:class:`str`]
+        The url of this file, if given.
     """
 
     __slots__ = (
-        "http",
-        "created_at",
-        "expires_at",
-        "name",
-        "mimetype",
+        "_http",
         "id",
+        "created_at",
+        "updated_at",
+        "deletes_at",
         "favorite",
-        "views",
-        "folder_id",
-        "max_views",
-        "size",
-        "url",
         "original_name",
+        "name",
+        "size",
+        "type",
+        "views",
+        "max_views",
+        "password",
+        "folder_id",
+        "thumbnail",
+        "tags",
+        "url",
     )
 
-    http: HTTPClient
+    _http: HTTPClient
+    id: str
     created_at: datetime.datetime
-    expires_at: Optional[datetime.datetime]
-    name: str
-    mimetype: str
-    id: int
+    updated_at: datetime.datetime
+    deletes_at: Optional[datetime.datetime]
     favorite: bool
-    views: int
-    folder_id: Optional[int]
-    max_views: Optional[int]
-    size: int  # in bytes
-    url: str
     original_name: Optional[str]
+    name: str
+    size: int
+    type: str
+    views: int
+    max_views: Optional[int]
+    password: Optional[Union[str, bool]]
+    folder_id: Optional[str]
+    thumbnail: Optional[Thumbnail]  # TODO repr this object, ask diced how tf these work
+    tags: Optional[List[Tag]]
+    url: Optional[str]
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> File:
-        expires_at = data.get("expiresAt", None)
-        expires_at_dt = parse_iso_timestamp(expires_at) if expires_at is not None else None
-        fields = {
-            "created_at": parse_iso_timestamp(data["createdAt"]),
-            "expires_at": expires_at_dt,
-            "name": data["name"],
-            "mimetype": data["mimetype"],
-            "id": data["id"],
-            "favorite": data["favorite"],
-            "views": data["views"],
-            "folder_id": data["folderId"],
-            "max_views": data["maxViews"],
-            "size": data["size"],
-            "url": data["url"],
-            "original_name": data.get("originalName"),
-        }
-        return cls(http=http, **fields)
+        return cls(
+            http,
+            data["id"],
+            parse_iso_timestamp(data["createdAt"]),
+            parse_iso_timestamp(data["updatedAt"]),
+            parse_iso_timestamp(data["deletesAt"]) if "deletesAt" in data and data["deletesAt"] is not None else None,
+            data["favorite"],
+            data.get("originalName"),
+            data["name"],
+            data["size"],
+            data["type"],
+            data["views"],
+            data.get("maxViews"),
+            data.get("password"),
+            data.get("folderId"),
+            data.get("thumbnail"),
+            data.get("tags"),
+            data.get("url"),
+        )
 
-    async def read(self) -> bytes:
-        """|coro|
+    @property
+    def full_url(self) -> str:
+        """
+        Returns
+        -------
+        :class:`str`
+            The full url of this file.
+        """
+        if self.url and (self.url.startswith("http://") or self.url.startswith("https://")):
+            url = self.url
+        else:
+            url = f"{self._http.base_url}{self.url}"
 
-        Read the File into memory.
+        return url
+
+    @property
+    def thumbnail_url(self) -> Optional[str]:
+        """
+        Returns
+        -------
+        Optional[:class:`str`]
+            The full url for the thumbnail image, if available.
+        """
+        if not self.thumbnail:
+            return None
+
+        return f"{self._http.base_url}/{self.thumbnail.path}"
+
+    def is_password_protected(self) -> bool:
+        """
+        Returns the password protection status of this file.
 
         Returns
         -------
-        bytes
-            The data of the File
+        :class:`bool`
         """
-        r = Route("GET", self.url)
-        return await self.http.request(r)
+        return self.password is not None
 
-    async def delete(self) -> None:
+    async def download_password_protected(self, password: str) -> bytes:
         """|coro|
 
-        Delete this File.
+        Download this file if password protected.
 
-        Raises
-        ------
-        NotFound
-            The file could not be found.
+        Parameters
+        ----------
+        password : :class:`str`
+            The password to use when accessing this file.
+
+        Returns
+        -------
+        :class:`bytes`
+            The content of this file.
         """
-        data = {"id": self.id, "all": False}
-        r = Route("DELETE", "/api/user/files")
-        await self.http.request(r, json=data)
+        params = {"pw": password}
+        r = Route("GET", self.full_url)
+        return await self._http.request(r, params=params)
 
-    async def edit(self, *, favorite: Optional[bool] = None) -> File:
+    async def refresh(self) -> File:
         """|coro|
 
-        Edit this File.
+        Retrieve an updated instance of this file.
+
+        Returns
+        -------
+        :class:`~zipline.models.File`
+            A new instance with the latest information about this file.
+        """
+        r = Route("GET", f"/api/user/files/{self.id}")
+        js = await self._http.request(r)
+        return File._from_data(js, http=self._http)
+
+    async def delete(self) -> File:
+        """|coro|
+
+        Delete this file.
+
+        Returns
+        -------
+        :class:`~zipline.models.File`
+            A new instance with the latest information about this file.
+        """
+        r = Route("DELETE", f"/api/user/files/{self.id}")
+        js = await self._http.request(r)
+        return File._from_data(js, http=self._http)
+
+    async def edit(
+        self,
+        *,
+        favorite: Optional[bool] = None,
+        tags: Optional[List[Tag]] = None,
+        max_views: Optional[int] = None,
+        original_name: Optional[str] = None,
+        password: Optional[str] = None,
+        type: Optional[str] = None,
+    ) -> File:
+        """|coro|
+
+        Update this file.
 
         Parameters
         ----------
         favorite: Optional[:class:`bool`]
-            Whether this File is favorited., by default None
+            The new favorite status of the file, if given.
+        tags: Optional[List[:class:`~zipline.models.Tag`]]
+            Tag to apply to this file, if given.
+        max_views: Optional[:class:`int`]
+            The new maximum views of the file, if given.
+        original_name: Optional[:class:`str`]
+            The new original name of the file, if given.
+        password: Optional[:class:`str`]
+            The new password for the file, if given.
+        type: Optional[:class:`str`]
+            The new MIME type for the file, if given.
+
+            .. warning::
+
+                Misuse of this parameter can cause files to display incorrectly or fail outright.
 
         Returns
         -------
-        :class:`File`
-            The edited File.
+        :class:`~zipline.models.File`
+            The updated file.
+        """
+        payload = {}
+
+        if favorite:
+            payload["favorite"] = favorite
+        if tags:
+            payload["tags"] = [t.id for t in tags]
+        if max_views:
+            payload["maxViews"] = max_views
+        if original_name:
+            payload["originalName"] = original_name
+        if password:
+            payload["password"] = password
+        if type:
+            payload["type"] = type
+
+        r = Route("PATCH", f"/api/user/files/{self.id}")
+        js = await self._http.request(r, json=payload)
+        return File._from_data(js, http=self._http)
+
+    async def add_favorite(self) -> File:
+        """|coro|
+
+        Favorite this file.
+
+        Returns
+        -------
+        :class:`~zipline.models.File`
+            A new instance with the latest information about this file.
 
         Raises
         ------
-        NotFound
-            The File could not be found.
+        ValueError
+            The file is already favorited.
         """
-        data = {"id": self.id, "favorite": favorite}
-        r = Route("PATCH", "/api/user/files")
-        js = await self.http.request(r, json=data)
-        return File._from_data(js, http=self.http)
+        if self.favorite:
+            raise ValueError("this file is already favorited.")
 
-    @property
-    def full_url(self) -> str:
-        """Returns the full URL of this File."""
-        return f"{self.http.base_url}{self.url}"
+        payload = {"favorite": True}
+        r = Route("PATCH", f"/api/user/files/{self.id}")
+        js = await self._http.request(r, json=payload)
+        return File._from_data(js, http=self._http)
+
+    async def remove_favorite(self) -> File:
+        """|coro|
+
+        Unfavorite this file.
+
+        Returns
+        -------
+        :class:`~zipline.models.File`
+            A new instance with the latest information about this file.
+
+        Raises
+        ------
+        ValueError
+            The file is already favorited.
+        """
+        if not self.favorite:
+            raise ValueError("this file is already not favorited.")
+
+        payload = {"favorite": False}
+        r = Route("PATCH", f"/api/user/files/{self.id}")
+        js = await self._http.request(r, json=payload)
+        return File._from_data(js, http=self._http)
+
+    async def remove_from_folder(self):
+        """|coro|
+
+        Remove this file from it's current :class:`~zipline.models.Folder`.
+        """
+        payload = {"delete": "file", "id": self.id}
+        r = Route("DELETE", f"/api/user/folders/{self.folder_id}")
+        await self._http.request(r, json=payload)
+
+    async def read(self) -> bytes:
+        """|coro|
+
+        Read the content of this file into memory.
+
+        Returns
+        -------
+        :class:`bytes`
+            The content of this file.
+        """
+        if self.url and (self.url.startswith("http://") or self.url.startswith("https://")):
+            url = self.url
+        else:
+            url = f"{self._http.base_url}{self.url}"
+
+        r = Route("GET", url)
+        return await self._http.request(r)
 
 
 @dataclass
-class User:
-    """Represents a Zipline User.
+class Folder:  # DONE
+    """
+    Represents a Folder on Zipline.
 
     Attributes
     ----------
-    id: :class:`int`
-        The User's id.
+    id: :class:`str`
+        The id of the folder.
+    created_at: :class:`datetime.datetime`
+        When the folder was created.
+    updated_at: :class:`datetime.datetime`
+        When the folder was last updated.
+    name: :class:`str`
+        The name of the folder.
+    public: :class:`bool`
+        Whether the folder is public.
+    files: Optional[List[:class:`~zipline.models.File`]]
+        The files contained in the folder, if available.
+    user: Optional[:class:`~zipline.models.User`]
+        The user this folder belongs to, if available.
+    user_id: :class:`str`
+        The id of the user this folder belongs to.
+    """
+
+    __slots__ = ("_http", "id", "created_at", "updated_at", "name", "public", "files", "user", "user_id")
+
+    _http: HTTPClient
+    id: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    name: str
+    public: bool
+    files: Optional[List[File]]
+    user: Optional[User]
+    user_id: str
+
+    @classmethod
+    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> Folder:
+        return cls(
+            http,
+            data["id"],
+            parse_iso_timestamp(data["createdAt"]),
+            parse_iso_timestamp(data["updatedAt"]),
+            data["name"],
+            data["public"],
+            [File._from_data(file_data, http) for file_data in data["files"]] if "files" in data else None,  # TODO verify.
+            User._from_data(data["user"], http) if "user" in data else None,
+            data["userId"],
+        )
+
+    async def refresh(self) -> Folder:
+        """|coro|
+
+        Retrieve an updated instance of this object.
+
+        Returns
+        -------
+        :class:`~zipline.models.Folder`
+            A new instance with the latest information about this folder.
+        """
+        r = Route("GET", f"/api/user/folders/{self.id}")
+        js = await self._http.request(r)
+        return Folder._from_data(js, http=self._http)
+
+    async def delete(self) -> Folder:
+        """|coro|
+
+        Delete this folder.
+
+        Returns
+        -------
+        :class:`~zipline.models.Folder`
+            A new instance with the latest information about this folder.
+        """
+        data = {"delete": "folder"}
+        r = Route("DELETE", f"/api/user/folders/{self.id}")
+        js = await self._http.request(r, json=data)
+        return Folder._from_data(js, self._http)
+
+    async def edit(self, *, name: str) -> Folder:
+        """|coro|
+
+        Edit this folder.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            The new name of this folder.
+
+        Returns
+        -------
+        :class:`~zipline.models.Folder`
+            The updated folder.
+        """
+        data = {"name": name}
+        r = Route("PATCH", f"/api/user/folders/{self.id}")
+        js = await self._http.request(r, json=data)
+        return Folder._from_data(js, http=self._http)
+
+    async def remove_file(self, file: Union[File, str], /) -> Folder:
+        """|coro|
+
+        Remove a file from this folder.
+
+        Parameters
+        ----------
+        file: Union[:class:`~zipline.models.File`, :class:`str`]
+            The file or file id to remove from this folder.
+
+        Returns
+        -------
+        :class:`~zipline.models.Folder`
+            A new instance with the latest information about this folder.
+        """
+        payload = {
+            "delete": "file",
+            "id": file.id if isinstance(file, File) else file,
+        }
+
+        r = Route("DELETE", f"/api/user/folders/{self.id}")
+        js = await self._http.request(r, json=payload)
+        return Folder._from_data(js, http=self._http)
+
+    async def add_file(self, file: Union[File, str], /) -> Folder:
+        """|coro|
+
+        Add a file to this folder.
+
+        Parameters
+        ----------
+        file: Union[:class:`~zipline.models.File`, :class:`str`]
+            The file or file id to add to this folder.
+
+        Returns
+        -------
+        :class:`~zipline.models.Folder`
+            A new instance with the latest information about this folder.
+        """
+        payload = {"id": file.id if isinstance(file, File) else file}
+
+        r = Route("PUT", f"/api/user/folders/{self.id}")
+        js = await self._http.request(r, json=payload)
+        return Folder._from_data(js, http=self._http)
+
+
+@dataclass
+class User:  # MOSTLY DONE: # TODO repr the UserViewSettings | Maybe implement an Avatar class that decodes the b64?
+    """
+    Represents a Zipline user.
+
+    Attributes
+    ----------
+    id: :class:`str`
+        The id of this user.
     username: :class:`str`
-        The User's username
-    avatar: Optional[:class:`str`]
-        The User's avatar, encoded in base64. None if they don't have one set.
-    token: :class:`str`
-        The User's token
-    administrator: :class:`bool`
-        Whether the User is an administrator
-    super_admin: :class:`bool`
-        Whether the User is a super admin
-    system_theme: :class:`str`
-        The User's preferred theme
-    embed: Dict[:class:`str`, Any]
-        The User's embed data, raw.
-    ratelimit: Optional[:class:`int`]
-        The User's ratelimit between File uploads, in seconds.
+        The username of this user.
+    created_at: :class:`datetime.datetime`
+        When this user was created or registered.
+    updated_at: :class:`datetime.datetime`
+        The last time this user was updated.
+    role: :class:`~zipline.enums.UserRole`
+        The role of this user.
+    view: :class:`dict`
+        Custom view info for this user.
+    sessions: List[:class:`str`]
+        List of session ids this user has open.
+    oauth_providers: List[:class:`~zipline.models.OAuthProvider`]
+        OAuth providers registered for this user.
     totp_secret: Optional[:class:`str`]
-        The User's Time-based One-Time Password (TOTP) secret. This secret is used for two-factor authentication (2FA).
-        It is a unique secret key associated with the user's account. If set, the user can generate time-based one-time passwords
-        using this secret to enhance the security of their account.
-    domains: List[:class:`str`]
-        List of domains the User has configured.
+        The user's timed one-time password secret, if available.
+    passkeys: List[:class:`~zipline.models.UserPasskey`]
+        Passkeys registered for this user.
+    quota: Optional[:class:`~zipline.models.UserQuota`]
+        The quota this user has, if applicable.
+    avatar: Optional[:class:`str`]
+        The user's avatar, base64 encoded.
+    password: Optional[:class:`str`]
+        Password information for this user, if available.
+    token: Optional[:class:`str`]
+        The user's token.
     """
 
     __slots__ = (
-        "http",
+        "_http",
         "id",
         "username",
-        "avatar",
-        "token",
-        "administrator",
-        "super_admin",
-        "system_theme",
-        "embed",
-        "ratelimit",
+        "created_at",
+        "updated_at",
+        "role",
+        "view",
+        "sessions",
+        "oauth_providers",
         "totp_secret",
-        "domains",
+        "passkeys",
+        "quota",
+        "avatar",
+        "password",
+        "token",
     )
 
-    http: HTTPClient
-    id: int
+    _http: HTTPClient
+    id: str
     username: str
-    avatar: Optional[str]  # Base64 data
-    token: str
-    administrator: bool
-    super_admin: bool
-    system_theme: str
-    embed: Dict[str, Any]
-    ratelimit: Optional[int]
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    role: UserRole
+    view: Optional[JSON]
+    sessions: List[str]
+    oauth_providers: List[OAuthProvider]
     totp_secret: Optional[str]
-    domains: List[str]
+    passkeys: Optional[List[UserPasskey]]
+    quota: Optional[UserQuota]
+    avatar: Optional[str]
+    password: Optional[str]
+    token: Optional[str]
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> User:
-        fields = {
-            "id": data["id"],
-            "username": data["username"],
-            "avatar": data["avatar"],
-            "token": data["token"],
-            "administrator": data["administrator"],
-            "super_admin": data["superAdmin"],
-            "system_theme": data["systemTheme"],
-            "embed": data["embed"],
-            "ratelimit": data["ratelimit"],
-            "totp_secret": data["totpSecret"],
-            "domains": data["domains"],
-        }
+        return cls(
+            http,
+            data["id"],
+            data["username"],
+            parse_iso_timestamp(data["createdAt"]),
+            parse_iso_timestamp(data["updatedAt"]),
+            UserRole(data["role"]),
+            data.get("view"),
+            data["sessions"],
+            data["oauthProviders"],
+            data.get("totpSecret"),
+            data.get("passkeys"),
+            data.get("quota"),
+            data.get("avatar"),
+            data.get("password"),
+            data.get("token"),
+        )
 
-        return cls(http=http, **fields)
+    async def refresh(self) -> User:
+        """|coro|
+
+        Retrieve the latest information about this user.
+
+        Returns
+        -------
+        :class:`~zipline.models.User`
+            A new instance with the latest information about this user.
+        """
+        r = Route("GET", f"/api/users/{self.id}")
+        js = await self._http.request(r)
+        return User._from_data(js, http=self._http)
+
+    async def edit(
+        self,
+        *,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        avatar: Optional[Tuple[str, bytes]] = None,
+        role: Optional[UserRole] = None,
+        quota: Optional[Union[UserQuota, PartialQuota]] = None,
+    ) -> User:
+        """|coro|
+
+        Edit this user.
+
+        Parameters
+        ----------
+        username: Optional[:class:`str`]
+            The new username for this user, if given.
+        password: Optional[:class:`str`]
+            The new password for this user, if given.
+        avatar: Optional[Tuple[:class:`str`, :class:`]]
+            The new avatar for this user, if given.
+        role: Optional[:class:`~zipline.enums.UserRole]
+            The new role for this user, if given.
+        quota: Optional[Union[:class:`~zipline.models.UserQuota`, :class:`~zipline.models.PartialQuota`]]
+            The new quota for this user, if given.
+
+        Returns
+        -------
+        :class:`~zipline.models.User`
+            The updated user.
+        """
+        payload = {}
+
+        if username:
+            payload["username"] = username
+        if password:
+            payload["password"] = password
+        if avatar:
+            payload["avatar"] = build_avatar_payload(*avatar)
+        if role:
+            payload["role"] = role.value
+        if quota:
+            payload["quota"] = quota._to_dict()
+
+        r = Route("PATCH", f"/api/users/{self.id}")
+        js = await self._http.request(r, json=payload)
+        return User._from_data(js, http=self._http)
+
+    async def delete(self, *, remove_data: bool = True) -> User:
+        """|coro|
+
+        Delete this user.
+
+        Parameters
+        ----------
+        remove_data: :class:`bool`
+            Whether this user's files and urls should be deleted as well, by default True
+
+        Returns
+        -------
+        :class:`~zipline.models.User`
+            A new instance with the latest information about this user.
+
+        Raises
+        ------
+        BadRequest
+            Something went wrong handling the request.
+        Forbidden
+            You are not an administrator and cannot use this method.
+        """
+        data = {"delete": remove_data}
+        r = Route("DELETE", f"/api/users/{self.id}")
+        js = await self._http.request(r, json=data)
+        return User._from_data(js, http=self._http)
 
 
 @dataclass
-class PartialInvite:
-    """Represents a partial Zipline invite. This is returned by Client.create_invites.
+class InviteUser:  # DONE
+    """
+    User information provided with an :class:`~zipline.models.Invite`.
+
+    .. note::
+
+        This can be resolved to a :class:`~zipline.models.User` via :meth:`~zipline.models.InviteUser.resolve`.
 
     Attributes
     ----------
-    code: :class:`str`
-        The invite code generated.
-    created_by_id: :class:`int`
-        The id of the User that created this invite.
-    expires_at: Optional[:class:`datetime.datetime`]
-        When this invite expires. None if the invite does not expire.
+    username: :class:`str`
+        The username of the invite owner.
+    id: :class:`str`
+        The id of the invite owner.
+    role: :class:`~zipline.enums.UserRole`
+        The invite owner's account type.
     """
 
-    __slots__ = ("code", "created_by_id", "expires_at")
+    __slots__ = ("_http", "username", "id", "role")
 
-    code: str
-    created_by_id: int
-    expires_at: Optional[datetime.datetime]
+    _http: HTTPClient
+    username: str
+    id: str
+    role: UserRole
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /) -> PartialInvite:
-        fields = {
-            "code": data["code"],
-            "created_by_id": data["createdById"],
-            "expires_at": parse_iso_timestamp(data["expiresAt"]) if data.get("expiresAt") is not None else None,
-        }
+    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> InviteUser:
+        return cls(
+            http,
+            data["username"],
+            data["id"],
+            UserRole(data["role"]),
+        )
 
-        return cls(**fields)
+    async def resolve(self) -> User:
+        """|coro|
+
+        Resolve this object to a full :class:`~zipline.models.User`.
+
+        Returns
+        -------
+        :class:`~zipline.models.User`
+            The fully fledged user object.
+        """
+        r = Route("GET", f"/api/users/{self.id}")
+        js = await self._http.request(r)
+        return User._from_data(js, http=self._http)
 
 
 @dataclass
-class Invite:
-    """Represents a Zipline invite.
+class Invite:  # DONE
+    """
+    Represents an invite to a Zipline instance.
 
     Attributes
     ----------
-    code: :class:`str`
-        The Invite code.
-    id: :class:`int`
-        The Invite id.
+    id: :class:`str`
+        The internal id of the invite.
     created_at: :class:`datetime.datetime`
-        When the Invite was created.
+        When this invite was created.
+    updated_at: :class:`datetime.datetime`
+        When this invite was last updated.
     expires_at: Optional[:class:`datetime.datetime`]
-        When the Invite expires. None if it does not expire.
-    used: :class:`bool`
-        Whether the Invite has been used.
-    created_by_id: :class:`int`
-        The id of the User that created this Invite.
+        When this invite expires, if applicable.
+    code: :class:`str`
+        The code for this invite.
+    uses: :class:`int`
+        The number of times this invite has been used.
+    max_uses: Optional[:class:`int`]
+        The number of times this invite can be used before it's no longer valid, if applicable.
+    inviter: :class:`~zipline.models.InviteUser`
+        The user that is attributed to the creation of this invite.
+    inviter_id: :class:`str`
+        The id of the user attributed to the creation of this invite.
     """
 
     __slots__ = (
-        "http",
-        "code",
+        "_http",
         "id",
         "created_at",
+        "updated_at",
         "expires_at",
-        "used",
-        "created_by_id",
+        "code",
+        "uses",
+        "max_uses",
+        "inviter",
+        "inviter_id",
     )
 
-    http: HTTPClient
-    code: str
-    id: int
+    _http: HTTPClient
+    id: str
     created_at: datetime.datetime
+    updated_at: datetime.datetime
     expires_at: Optional[datetime.datetime]
-    used: bool
-    created_by_id: int
+    code: str
+    uses: int
+    max_uses: Optional[int]
+    inviter: InviteUser
+    inviter_id: str
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> Invite:
-        fields = {
-            "id": data["id"],
-            "code": data["code"],
-            "created_at": data["createdAt"],
-            "expires_at": data.get("expiresAt"),
-            "used": data["used"],
-            "created_by_id": data["createdById"],
-        }
-
-        return cls(http=http, **fields)
+        return cls(
+            http,
+            data["id"],
+            parse_iso_timestamp(data["createdAt"]),
+            parse_iso_timestamp(data["updatedAt"]),
+            parse_iso_timestamp(data["expiresAt"]) if "expiresAt" in data and data["expiresAt"] is not None else None,
+            data["code"],
+            data["uses"],
+            data.get("maxUses"),
+            InviteUser._from_data(data["inviter"], http=http),
+            data["inviterId"],
+        )
 
     @property
-    def url(self):
-        """The full url of this invite."""
-        return f"{self.http.base_url}/auth/register?code={self.code}"
+    def url(self) -> str:
+        """
+        Returns
+        -------
+        :class:`str`
+            The full url of this invite.
+        """
+        return f"{self._http.base_url}/auth/register?code={self.code}"
 
     async def delete(self) -> Invite:
         """|coro|
 
-        Delete this Invite.
+        Delete this invite.
 
         Returns
         -------
-        :class:`Invite`
-            The deleted Invite.
-
-        Raises
-        ------
-        NotFound
-            The Invite could not be found
+        :class:`~zipline.models.Invite`
+            A new instance with the latest information about this invite.
         """
-        query_params = {"code": self.code}
-        r = Route("DELETE", "/api/auth/invite")
-        js = await self.http.request(r, params=query_params)
-        return Invite._from_data(js, http=self.http)
+        r = Route("DELETE", f"/api/auth/invites/{self.id}")
+        js = await self._http.request(r)
+        return Invite._from_data(js, self._http)
+
+    async def refresh(self) -> Invite:
+        """|coro|
+
+        Retreive updated information about this invite.
+
+        Returns
+        -------
+        :class:`~zipline.models.Invite`
+            A new instance with the latest information about this invite.
+        """
+        r = Route("GET", f"/api/auth/invites/{self.id}")
+        js = await self._http.request(r)
+        return Invite._from_data(js, http=self._http)
 
 
-@dataclass
-class Folder:
-    """Represents a Zipline folder.
+class TagFile:  # DONE
+    """
+    Partial file given with Tags.
+
+    .. note::
+
+        This can be resolved to a :class:`~zipline.models.File` via :meth:`~zipline.models.TagFile.resolve`.
 
     Attributes
     ----------
-    id: :class:`int`
-        The id of the Folder
-    name: :class:`str`
-        The name of the Folder
-    user_id: :class:`int`
-        The id of the User that owns the Folder.
-    created_at: :class:`datetime.datetime`
-        When the Folder was created.
-    updated_at: :class:`datetime.datetime`
-        When the folder was last updated.
-    files: List[:class:`~zipline.models.File`]
-        The Files in this Folder, if any. None if the Folder was fetched without files.
-    public: :class:`bool`
-        Whether this folder is public.
-
-        .. versionadded:: 0.16.0
+    id: :class:`str`
+        The internal id of the :class:`~zipline.models.File` represented.
     """
 
-    # TODO FOLDER SPECIFIC ACTIONS FROM "/api/user/folders/[id]" should be implemented here
+    __slots__ = ("_http", "id")
 
-    __slots__ = (
-        "http",
-        "id",
-        "name",
-        "user_id",
-        "created_at",
-        "updated_at",
-        "files",
-        "public",
-    )
+    def __init__(self, http: HTTPClient, id: str):
+        self._http = http
+        self.id = id
 
-    http: HTTPClient
-    id: int
-    name: str
-    user_id: int
+    async def resolve(self) -> File:
+        """|coro|
+
+        Retrieve the whole file associated with this partial data.
+
+        Returns
+        -------
+        :class:`~zipline.models.File`
+            The fully fledged file object.
+        """
+        r = Route("GET", f"/api/user/files/{self.id}")  # NOTE: Undocumented // Not officially used in the frontend.
+        js = await self._http.request(r)
+        return File._from_data(js, http=self._http)
+
+
+@dataclass
+class Tag:  # DONE
+    """
+    Represents a tag on Zipline.
+
+    Attributes
+    ----------
+    id: :class:`str`
+        The internal id of the tag.
+    created_at: :class:`datetime.datetime`
+        When this tag was created.
+    updated_at: :class:`datetime.datetime`
+        When this tag was last updated.
+    name: :class:`str`
+        The name of this tag.
+    color: :class:`str`
+        The color associated with this tag.
+    files: Optional[List[:class:`~zipline.models.TagFile`]]
+        Partial files associated with this tag, if available.
+    """
+
+    __slots__ = ("_http", "id", "created_at", "updated_at", "name", "color", "files")
+
+    _http: HTTPClient
+    id: str
     created_at: datetime.datetime
     updated_at: datetime.datetime
-    files: List[File] | None
-    public: bool
+    name: str
+    color: str
+    files: Optional[List[TagFile]]
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> Folder:
-        files = data.get("files")
-        fields = {
-            "id": data["id"],
-            "name": data["name"],
-            "user_id": data["userId"],
-            "created_at": parse_iso_timestamp(data["createdAt"]),
-            "updated_at": parse_iso_timestamp(data["updatedAt"]),
-            "files": [File._from_data(f, http=http) for f in files] if files is not None else None,
-            "public": data["public"],
-        }
+    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> Tag:
+        return cls(
+            http,
+            data["id"],
+            parse_iso_timestamp(data["createdAt"]),
+            parse_iso_timestamp(data["updatedAt"]),
+            data["name"],
+            data["color"],
+            [TagFile(http, r["id"]) for r in data["files"]] if "files" in data else None,
+        )
 
-        return cls(http=http, **fields)
-
-    async def add_file(self, file: File, /) -> None:
+    async def edit(self, color: Optional[str] = None, name: Optional[str] = None) -> Tag:
         """|coro|
 
-        Adds a File to this Folder
+        Edit this tag.
 
         Parameters
         ----------
-        file: :class:`File`
-            The File to add.
+        color: Optional[:class:`str`]
+            The new color of the tag, if given.
 
-        Raises
-        ------
-        BadRequest
-            There was an error adding the file
-        UnhandledError
-            An unexpected exception occured, please report this to the developer.
+            .. note::
+
+                Must be in hex format with preceeding #
+
+                ex. #rrggbb
+        name: Optional[:class:`str`]
+            The new name of the tag, if given.
+
+        Returns
+        -------
+        :class:`~zipline.models.Tag`
+            The updated tag.
         """
-        data = {
-            "file": file.id,
-        }
-        r = Route("POST", f"/api/user/folders/{self.id}")
-        await self.http.request(r, json=data)
+        payload = {}
 
-    async def remove_file(self, file: File, /):
+        if color:
+            payload["color"] = color
+        if name:
+            payload["name"] = name
+
+        r = Route("PATCH", f"/api/user/tags/{self.id}")
+        js = await self._http.request(r, json=payload)
+        return Tag._from_data(js, http=self._http)
+
+    async def delete(self) -> Tag:
         """|coro|
 
-        Removes a File from this Folder
+        Delete this tag.
 
-        Parameters
-        ----------
-        file: :class:`File`
-            The File to remove.
-
-        Raises
-        ------
-        BadRequest
-            There was an error removing the file
-        UnhandledError
-            An unexpected exception occured, please report this to the developer.
+        Returns
+        -------
+        :class:`~zipline.models.Tag`
+            A new instance with the latest information about this tag.
         """
-        data = {
-            "file": file.id,
-        }
+        r = Route("DELETE", f"/api/user/tags/{self.id}")
+        js = await self._http.request(r)
+        return Tag._from_data(js, http=self._http)
 
-        r = Route("DELETE", f"/api/user/folders/{self.id}")
-        await self.http.request(r, json=data)
+    async def refresh(self) -> Tag:
+        """|coro|
 
-    @property
-    async def url(self) -> str:
-        return f"{self.http.base_url}/folder/{self.id}"
+        Retrieve the latest information about this tag.
+
+        Returns
+        -------
+        :class:`~zipline.models.Tag`
+            A new instance with the latest information about this tag.
+        """
+        r = Route("GET", f"/api/user/tags/{self.id}")
+        js = await self._http.request(r)
+        return Tag._from_data(js, http=self._http)
 
 
 @dataclass
-class ShortenedURL:
-    """Represents a shortened url on Zipline.
+class URL:  # DONE
+    """
+    Represents a shortened url on Zipline.
 
     Attributes
     ----------
+    id: :class:`str`
+        The internal id of the url.
     created_at: :class:`datetime.datetime`
-        When the url was created.
-    id: :class:`int`
-        The id of the url.
-    destination: :class:`str`
-        The destination url.
+        When this url was created.
+    updated_at: :class:`datetime.datetime`
+        When this url was last updated.
+    code: :class:`str`
+        The url code.
     vanity: Optional[:class:`str`]
-        The vanity url of this invite. None if this isn't a vanity url.
+        The vanity code of this url, if applicable.
+    destination: :class:`str`
+        The url this url redirects to.
     views: :class:`int`
-        The number of times this invite has been used.
+        The number of times this url has been used.
     max_views: Optional[:class:`int`]
-        The number of times this url can be viewed before deletion. None if there is no limit.
-    url: :class:`str`
-        The url path to use this. Note this does not include the base url.
+        The maximum number of times this url can be used, if applicable.
+    password: Optional[:class:`str`]
+        The password required to use this url.
+    enabled: :class:`bool`
+        Whether this url is active for use.
+    user: Optional[:class:`~zipline.models.User`]
+        The user this url belongs to.
+    user_id: :class:`str`
+        The id of the user this url belongs to.
     """
 
     __slots__ = (
-        "http",
-        "created_at",
+        "_http",
         "id",
-        "destination",
+        "created_at",
+        "updated_at",
+        "code",
         "vanity",
+        "destination",
         "views",
         "max_views",
-        "url",
+        "password",
+        "enabled",
+        "user",
+        "user_id",
     )
 
-    http: HTTPClient
+    _http: HTTPClient
+    id: str
     created_at: datetime.datetime
-    id: int
-    destination: str
+    updated_at: datetime.datetime
+    code: str  # The part of the url that redirects. <base_url>/go/<code>
     vanity: Optional[str]
+    destination: str
     views: int
     max_views: Optional[int]
-    url: str
+    password: Optional[str]
+    enabled: bool
+    user: Optional[User]
+    user_id: str
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> ShortenedURL:
-        fields = {
-            "created_at": parse_iso_timestamp(data["createdAt"]),
-            "id": data["id"],
-            "destination": data["destination"],
-            "vanity": data.get("vanity"),
-            "views": data["views"],
-            "max_views": data.get("maxViews"),
-            "url": data["url"],
-        }
-
-        return cls(http=http, **fields)
+    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> URL:
+        return cls(
+            http,
+            data["id"],
+            parse_iso_timestamp(data["createdAt"]),
+            parse_iso_timestamp(data["updatedAt"]),
+            data["code"],
+            data.get("vanity"),
+            data["destination"],
+            data["views"],
+            data.get("maxViews"),
+            data.get("password"),
+            data["enabled"],
+            User._from_data(data["user"], http) if "user" in data else None,
+            data["userId"],
+        )
 
     @property
     def full_url(self) -> str:
-        return f"{self.http.base_url}{self.url}"
+        """
+        Returns
+        -------
+        :class:`str`
+            The full url.
+        """
+        code = self.vanity or self.code
+        return f"{self._http.base_url}/go/{code}"
 
-    async def delete(self) -> None:
+    async def edit(
+        self,
+        max_views: Optional[int] = None,
+        vanity: Optional[str] = None,
+        destination: Optional[str] = None,
+        enabled: Optional[bool] = None,
+        password: Optional[str] = None,
+    ) -> URL:
         """|coro|
 
-        Deletes this :class:`ShortenedURL`.
+        Edit this url.
+
+        Parameters
+        ----------
+        max_views: Optional[:class:`int`]
+            The new maximum views, if given.
+        vanity: Optional[:class:`str`]
+            The new vanity code this url should have, if given.
+        destination: Optional[:class:`str`]
+            The new destination, if given.
+        enabled: Optional[:class:`bool`]
+            Whether this url should be usable, if given.
+        password: Optional[:class:`str`]
+            The new password required to use this url, if given.
+
+        Returns
+        -------
+        :class:`~zipline.models.URL`
+            The updated url.
         """
-        data = {"id": self.id}
-        r = Route("DELETE", "/api/user/urls")
-        await self.http.request(r, json=data)
+        payload = {}
+
+        if max_views:
+            payload["maxViews"] = max_views
+        if vanity:
+            payload["vanity"] = vanity
+        if destination:
+            payload["destination"] = destination
+        if enabled:
+            payload["enabled"] = enabled
+        if password:
+            payload["password"] = password
+
+        r = Route("PATCH", f"/api/user/urls/{self.id}")
+        js = await self._http.request(r, json=payload)
+        return URL._from_data(js, http=self._http)
+
+    async def delete(self) -> URL:
+        """|coro|
+
+        Delete this url.
+
+        Returns
+        -------
+        :class:`~zipline.models.URL`
+            A new instance with the latest information about this url.
+        """
+        r = Route("DELETE", f"/api/user/urls/{self.id}")
+        js = await self._http.request(r)
+        return URL._from_data(js, http=self._http)
 
 
 @dataclass
-class UploadResponse:
-    """Represents a response to a File upload.
+class UploadFile:  # DONE
+    """
+    File data given by the API when a file is uploaded.
+
+    .. note::
+
+        This may be resolved to a full :class:`~zipline.models.File` via :meth:`~zipline.models.UploadFile.resolve`.
 
     Attributes
     ----------
-    file_urls: List[:class:`str`]
-        The urls of the Files that were uploaded.
-    expires_at: Optional[:class:`datetime.datetime`]
-        When the uploads expire. None if they do not expire.
-    removed_gps: Optional[:class:`bool`]
-        Whether gps data was removed from the uploads.
+    id: :class:`str`
+        The id of the uploaded file.
+    type: :class:`str`
+        The media type of the uploaded file.
+    url: :class:`str`
+        The url for the uploaded file.
     """
 
-    __slots__ = ("file_urls", "expires_at", "removed_gps")
+    __slots__ = ("_http", "id", "type", "url")
 
-    file_urls: List[str]
-    expires_at: Optional[datetime.datetime]
-    removed_gps: Optional[bool]
+    _http: HTTPClient
+    id: str
+    type: str
+    url: str
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any]) -> UploadResponse:
-        expires_at = data.get("expiresAt")
-        fields = {
-            "file_urls": data["files"],
-            "expires_at": parse_iso_timestamp(expires_at) if expires_at is not None else None,
-            "removed_gps": data.get("removed_gps"),
-        }
+    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> UploadFile:
+        return cls(
+            http,
+            data["id"],
+            data["type"],
+            data["url"],
+        )
 
-        return cls(**fields)
+    async def resolve(self) -> File:
+        """|coro|
+
+        Retrieve fully fledged information about this object.
+
+        Returns
+        -------
+        :class:`~zipline.models.File`
+            The fully fledged object
+        """
+        r = Route("GET", f"/api/user/files/{self.id}")  # NOTE: Undocumented // Not officially used in the frontend.
+        js = await self._http.request(r)
+        return File._from_data(js, self._http)
 
 
-class FileData:
-    """Used to upload a File to Zipline.
+@dataclass
+class UploadResponse:  # DONE
+    """
+    Response given by the API when a file or multiple files are uploaded.
+
+    Attributes
+    ----------
+    files: List[:class:`~zipline.models.UploadFile`]
+        A list of information about the files uploaded.
+    """
+
+    __slots__ = ("_http", "files", "deletes_at")
+
+    _http: HTTPClient
+    files: List[UploadFile]
+    deletes_at: Optional[datetime.datetime]
+
+    @classmethod
+    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> UploadResponse:
+        return cls(
+            http,
+            [UploadFile._from_data(uf, http) for uf in data["files"]],
+            parse_iso_timestamp(data["deletesAt"]) if "deletesAt" in data else None,
+        )
+
+
+class FileData:  # DONE
+    """
+    Used to upload a File to Zipline.
 
     Attributes
     ----------
@@ -617,7 +1259,7 @@ class FileData:
         filename: Optional[:class:`str`]
             The name of the file to be uploaded. Defaults to filename of the given path, if applicable.
         mimetype: Optional[:class:`str`]
-            The MIME type of the file, if None the lib will attempt to determine it.
+            The MIME type of the file, if None the library will attempt to determine it.
 
         Raises
         ------
@@ -661,44 +1303,375 @@ class FileData:
             raise TypeError("could not determine mimetype of file given")
 
 
-@dataclass
-class ServerVersionInfo:
-    """Information about the current Zipline version.
+class PartialQuota:  # DONE
+    """
+    A partial quota useful for creating a new quota for a :class:`~zipline.models.User`.
 
     Attributes
     ----------
-    is_upstream: :class:`bool`
-        Whether the version being run is current.
-    update_to_type: :class:`str`
-        The branch being tracked.
-    stable_version: :class:`str`
-        The current stable version of Zipline.
-    upstream_version: :class:`str`
-        The current GitHub version of Zipline.
-    current_version: :class:`str`
-        The version of Zipline installed on this server.
+    type: :class:`~zipline.enums.QuotaType`
+        The type of this quota.
+    value: Optional[:class:`int`]
+        The value to assign to this quota.
+
+        .. note::
+
+            This may only be omitted if :attr:`~zipline.PartialQuota.type` is :attr:`~zipline.QuotaType.none`
+    max_urls: Optional[int]
+        The url limit for this quota.
+
+        .. note::
+
+            This argument may be omitted. If None is passed there will be no limit.
+    """
+
+    def __init__(self, type: QuotaType, value: Optional[int] = None, max_urls: Optional[int] = MISSING):
+        if self.value and self.value < 0:
+            raise ValueError("quota amount must be greater than or equal to zero.")
+
+        if self.type is not QuotaType.none and self.value is None:
+            raise ValueError("value must be given to this quota unless type is none.")
+
+        if isinstance(max_urls, int) and max_urls <= 0:
+            raise ValueError("max_urls must be greater than or equal to zero.")
+
+        self.type = type
+        self.value = value
+        self.max_urls = max_urls
+
+    def _to_dict(self) -> Dict[str, Any]:
+        return generate_quota_payload(self.type, self.value, self.max_urls)
+
+
+@dataclass
+class UserQuota:  # DONE
+    """
+    Represents a quota assigned to a :class:`~zipline.models.User` in Zipline.
+
+    .. note::
+
+        While this class may be used to update a user's quota this class is not intended
+        to be created manually and should not be used for this purpose.
+
+        Usage of :class:`~zipline.models.PartialQuota` is recommended this purpose instead.
+
+    Attributes
+    ----------
+    id: :class:`str`
+        The id of the quota.
+    created_at: :class:`datetime.datetime`
+        When this quota was created.
+    updated_at: :class:`datetime.datetime`
+        When this quota was last updated.
+    files_quota: :class:`~zipline.enums.QuotaType`
+        The type of this quota.
+    max_bytes: Optional[:class:`str`]
+        The maximum bytes of storage for this quota, if applicable.
+    max_files: Optional[:class:`int`]
+        The maximum number of files for this quota, if applicable.
+    max_urls: Optional[:class:`int`]
+        The maximum number of shortened urls for this quota, if applicable.
+    user: Optional[:class:`~zipline.models.User`]
+        The user this quota is assigned to, if given.
+    user_id: Optional[:class:`str`]
+        The id of the user this quota is assigned to, if given.
     """
 
     __slots__ = (
-        "is_upstream",
-        "update_to_type",
-        "stable_version",
-        "upstream_version",
-        "current_version",
+        "_http",
+        "id",
+        "created_at",
+        "updated_at",
+        "files_quota",
+        "max_bytes",
+        "max_files",
+        "max_urls",
+        "user",
+        "user_id",
     )
 
-    is_upstream: bool
-    update_to_type: str
-    stable_version: str
-    upstream_version: str
-    current_version: str
+    _http: HTTPClient
+    id: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    files_quota: QuotaType
+    max_bytes: Optional[str]
+    max_files: Optional[int]
+    max_urls: Optional[int]
+    user: Optional[User]
+    user_id: Optional[str]
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /) -> ServerVersionInfo:
-        is_upstream = data.get("isUpstream")
-        update_to_type = data.get("updateToType")
-        stable_version = safe_get(data, "versions", "stable")
-        upstream_version = safe_get(data, "versions", "upstream")
-        current_version = safe_get(data, "versions", "current")
+    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> UserQuota:
+        return cls(
+            http,
+            data["id"],
+            parse_iso_timestamp(data["createdAt"]),
+            parse_iso_timestamp(data["updatedAt"]),
+            QuotaType(data["filesQuota"]),
+            data.get("maxBytes"),
+            data.get("maxFiles"),
+            data.get("maxUrls"),
+            User._from_data(data["user"], http=http) if "user" in data else None,
+            data.get("userId"),
+        )
 
-        return cls(is_upstream, update_to_type, stable_version, upstream_version, current_version)  # type: ignore
+    def _to_dict(self) -> Dict[str, Any]:
+        return generate_quota_payload(self.type, self._amount(), self.max_urls)
+
+    def _amount(self) -> int:
+        if self.max_bytes is not None:
+            return int(self.max_bytes)
+
+        if self.max_files is not None:
+            return self.max_files
+
+        raise ValueError("amount of this quota cannot be determined.")
+
+    @property
+    def type(self) -> QuotaType:
+        """
+        Returns
+        -------
+        :class:`~zipline.enums.QuotaType`
+            The type of this quota.
+        """
+        return self.files_quota
+
+    async def resolve_user(self) -> User:
+        """|coro|
+
+        Resolve the user this quota is assigned to, if possible.
+
+        Returns
+        -------
+        :class:`~zipline.models.User`
+            The user this quota is assigned to.
+
+        Raises
+        ------
+        TypeError
+            The :attr:`Quota.user_id` is None and the user cannot be resolved.
+        """
+        if self.user_id is None:
+            raise TypeError("cannot resolve user with null id.")
+
+        r = Route("GET", f"/api/users/{self.id}")
+        js = await self._http.request(r)
+        return User._from_data(js, http=self._http)
+
+
+@dataclass
+class UserPasskey:  # DONE
+    """
+    A passkey a Zipline :class:`~zipline.models.User` has set up.
+
+    Attributes
+    ----------
+    id: :class:`str`
+        The internal id of this object.
+    created_at: :class:`datetime.datetime`
+        When this passkey was created in the database.
+    updated_at: :class:`datetime.datetime`
+        When this passkey was last updated.
+    last_used: Optional[:class:`datetime.datetime`]
+        When this passkey was last used.
+    name: :class:`str`
+        The name of this passkey.
+    reg: :class:`dict`
+        Additional information about this passkey.
+    user_id: :class:`str`
+        The id of the :class:`~zipline.models.User` that this passkey belongs to.
+    """
+
+    __slots__ = ("id", "created_at", "updated_at", "last_used", "name", "reg", "user_id")
+
+    id: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    last_used: Optional[datetime.datetime]
+    name: str
+    reg: JSON
+    user_id: str  # NOTE: This does expose a `User` attr in the api.
+    #                     Not inclined to expose it because it'd complicate this class
+    #                     for minimal gain as this should already be attached to a User object.
+
+    @classmethod
+    def _from_data(cls, data: Dict[str, Any], /) -> UserPasskey:
+        return cls(
+            data["id"],
+            parse_iso_timestamp(data["createdAt"]),
+            parse_iso_timestamp(data["updatedAt"]),
+            parse_iso_timestamp(data["lastUsed"]) if "lastUsed" in data else None,
+            data["name"],
+            data["reg"],
+            data["userId"],
+        )
+
+
+@dataclass
+class OAuthProvider:  # DONE
+    """
+    Represents an OAuth provider being used by a :class:`~zipline.models.User` on Zipline.
+
+    Attributes
+    ----------
+    id: :class:`str`
+        The internal id of this entry.
+    created_at: :class:`datetime.datetime`
+        When this entry was created.
+    updated_at: :class:`datetime.datetime`
+        When this entry was updated.
+    user_id: :class:`str`
+        The id of the user this provider registration is for.
+    provider: :class:`~zipline.enums.OAuthProviderType`
+        The service this entry is for.
+    username: :class:`str`
+        The username of this entry.
+    access_token: :class:`str`
+        The access token of this entry.
+    refresh_token: Optional[:class:`str`]
+        The refresh token for this entry.
+    oauth_id: Optional[:class:`str`]
+        The oauth id for this entry.
+    """
+
+    __slots__ = (
+        "id",
+        "created_at",
+        "updated_at",
+        "user_id",
+        "provider",
+        "username",
+        "access_token",
+        "refresh_token",
+        "oauth_id",
+    )
+
+    id: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    user_id: str
+    provider: OAuthProviderType
+    username: str
+    access_token: str
+    refresh_token: Optional[str]
+    oauth_id: Optional[str]
+
+    @classmethod
+    def _from_data(cls, data: Dict[str, Any], /) -> OAuthProvider:
+        return cls(
+            data["id"],
+            parse_iso_timestamp(data["createdAt"]),
+            parse_iso_timestamp(data["updatedAt"]),
+            data["userId"],
+            OAuthProviderType(data["provider"]),
+            data["username"],
+            data["accessToken"],
+            data.get("refreshToken"),
+            data.get("oauthId"),
+        )
+
+
+class Thumbnail:  # DONE
+    """
+    Thumbnail data for a Zipline :class:`~zipline.models.File`.
+
+    Attributes
+    ----------
+    path: :class:`str`
+        The path to this thumbnail.
+    """
+
+    __slots__ = ("path",)
+
+    def __init__(self, path: str):
+        self.path = path
+
+
+class UserViewSettings:  # TODO
+    ...
+
+
+@dataclass
+class ServerVersionInfo:
+    """
+    Version information for a Zipline instance.
+
+    Attributes
+    ----------
+    version: :class:`str`
+        The current version being used.
+    """
+
+    __slots__ = ("version",)
+
+    version: str
+
+    @classmethod
+    def _from_data(cls, data: Dict[str, Any]) -> ServerVersionInfo:
+        return cls(data["version"])
+
+
+@dataclass
+class UserStats:
+    """
+    Stats for a Zipline :class:`~zipline.models.User`.
+
+    Attributes
+    ----------
+    files_uploaded: :class:`int`
+        The number of files the user has uploaded.
+    favorite_files: :class:`int`
+        The number of files the user has favorited.
+    views: :class:`int`
+        The number of times files uploaded by the user have been viewed.
+    avg_views: :class:`int`
+        The average number of views a file uploaded by the user has received.
+    storage_used: :class:`int`
+        The amount of storage the user is using in bytes.
+    avg_storage_used: :class:`float`
+        The amount of storage a file uploaded by the user takes up in bytes.
+    urls_created: :class:`int`
+        The number of urls the user has created.
+    url_views: :class:`int`
+        The number of times urls created by the user have been visited.
+    sort_type_count: Dict[:class:`str`, :class:`int`]
+        A mapping of MIME type to number of files uploaded.
+    """
+
+    __slots__ = (
+        "files_uploaded",
+        "favorite_files",
+        "views",
+        "avg_views",
+        "storage_used",
+        "avg_storage_used",
+        "urls_created",
+        "url_views",
+        "sort_type_count",
+    )
+
+    files_uploaded: int
+    favorite_files: int
+    views: int
+    avg_views: int
+    storage_used: int
+    avg_storage_used: float
+    urls_created: int
+    url_views: int
+    sort_type_count: Dict[str, int]
+
+    @classmethod
+    def _from_data(cls, data: Dict[str, Any]) -> UserStats:
+        return cls(
+            data["filesUploaded"],
+            data["favoriteFiles"],
+            data["views"],
+            data["avgViews"],
+            data["storageUsed"],
+            data["avgStorageUsed"],
+            data["urlsCreated"],
+            data["urlViews"],
+            data["sortCountType"],
+        )

@@ -22,7 +22,13 @@ SOFTWARE.
 
 from enum import Enum
 
-__all__ = ("NameFormat",)
+__all__ = (
+    "NameFormat",
+    "UserRole",
+    "RecentFilesFilter",
+    "QuotaType",
+    "OAuthProviderType",
+)
 
 
 class NameFormat(Enum):
@@ -33,3 +39,28 @@ class NameFormat(Enum):
     date = "date"
     random = "random"
     gfycat = "gfycat"
+
+
+class UserRole(Enum):
+    user = "USER"
+    admin = "ADMIN"
+    super_admin = "SUPERADMIN"
+
+
+class RecentFilesFilter(Enum):
+    all = "all"
+    none = "none"
+    dashboard = "dashboard"
+
+
+class QuotaType(Enum):
+    by_bytes = "BY_BYTES"
+    by_files = "BY_FILES"
+    none = "NONE"  # Only applicable when editing? TODO Verify?
+
+
+class OAuthProviderType(Enum):
+    discord = "DISCORD"
+    google = "GOOGLE"
+    github = "GITHUB"
+    oidc = "OIDC"

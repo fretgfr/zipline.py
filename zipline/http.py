@@ -29,7 +29,7 @@ from typing import Any, Dict, Literal, Optional, Union
 import aiohttp
 from yarl import URL
 
-from .errors import BadRequest, Forbidden, NotAuthenticated, NotFound, ServerError, UnhandledError, ZiplineError
+from .errors import BadRequest, Forbidden, NotAuthenticated, NotFound, RateLimited, ServerError, UnhandledError, ZiplineError
 from .meta import __version__
 
 HTTP_METHOD = Literal["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "TRACE", "CONNECT", "OPTIONS"]
@@ -97,7 +97,7 @@ class HTTPClient:
 
         text = await response.text(encoding="utf-8")
 
-        if content_type == "application/json":
+        if content_type and content_type.startswith("application/json"):
             return from_json(text)
 
         return text
@@ -131,6 +131,8 @@ class HTTPClient:
                 raise Forbidden("You cannot access this resource.")
             elif status == 404:
                 raise NotFound(f"Requested resource not found.")
+            elif status == 429:
+                raise RateLimited("we are being rate limited")
             elif 405 <= status < 500:
                 raise ZiplineError(f"{status}: {error}")
             elif status >= 500:
@@ -139,4 +141,4 @@ class HTTPClient:
             if 200 <= status < 300:
                 return data
 
-        raise UnhandledError()
+        raise UnhandledError("an unhandled error occurred when processing your request.")

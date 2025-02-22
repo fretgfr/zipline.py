@@ -20,10 +20,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import base64
 import datetime
 from itertools import islice
 from operator import attrgetter
-from typing import Any, AsyncIterable, Coroutine, Dict, Generator, Iterable, Optional, Tuple, TypeVar, Union, overload
+from typing import (
+    Any,
+    AsyncIterable,
+    Callable,
+    Coroutine,
+    Dict,
+    Generator,
+    Iterable,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+    overload,
+)
+
+from .enums import QuotaType
 
 __all__ = (
     "as_chunks",
@@ -37,11 +53,12 @@ Coro = Coroutine[Any, Any, T]
 
 
 def parse_iso_timestamp(iso_str: str, /) -> datetime.datetime:
-    """Parses an iso string to an aware UTC datetime."""
+    """Parses an ISO string to an aware UTC datetime."""
     return datetime.datetime.strptime(iso_str, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=datetime.timezone.utc)
 
 
 def to_iso_format(dt: datetime.datetime, /) -> str:
+    """Transforms a datetime.datetime to an ISO string."""
     return dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
@@ -51,7 +68,7 @@ def utcnow() -> datetime.datetime:
     Returns
     --------
     :class:`datetime.datetime`
-        The current aware datetime in UTC.
+        The current time in UTC as an aware datetime.
     """
     return datetime.datetime.now(datetime.timezone.utc)
 
@@ -62,9 +79,9 @@ def as_chunks(iterable: Iterable[T], n: int) -> Generator[Tuple[T, ...], None, N
 
     Parameters
     ----------
-    iterable : :class:`collections.abc.Iterable`
+    iterable: :class:`collections.abc.Iterable`
         The iterable to batch
-    n : :class:`int`
+    n: :class:`int`
         The number of elements per generated tuple.
 
     Raises
@@ -195,6 +212,76 @@ def safe_get(dict_: Dict[Any, Any], *keys: Any) -> Optional[Any]:
             return None
 
     return dict_
+
+
+def build_avatar_payload(mime: str, data: bytes) -> str:
+    """
+    Builds an encoded string that can be used to upload avatar data.
+
+    Parameters
+    ----------
+    mime: str
+        The MIME of the data given.
+    data: bytes
+        The payload's actual data.
+
+    Returns
+    -------
+    str
+        The encoded data
+    """
+    avatar_bytes_encoded = base64.b64encode(data).decode("ascii")
+
+    return f"data:{mime};base64,{avatar_bytes_encoded}"
+
+
+def copy_doc(original: Callable[..., Any]) -> Callable[[T], T]:
+    def decorator(overridden: T) -> T:
+        overridden.__doc__ = original.__doc__
+        overridden.__signature__ = _signature(original)  # type: ignore
+        return overridden
+
+    return decorator
+
+
+class _MissingSentinel:
+    __slots__ = ()
+
+    def __eq__(self, other) -> bool:
+        return False
+
+    def __bool__(self) -> bool:
+        return False
+
+    def __hash__(self) -> int:
+        return 0
+
+    def __repr__(self):
+        return "..."
+
+
+MISSING: Any = _MissingSentinel()
+
+
+def generate_quota_payload(
+    type: QuotaType, value: Optional[int] = None, max_urls: Optional[int] = MISSING
+) -> Dict[str, Any]:
+    payload: Dict[str, Any] = {
+        "filesType": type.value,
+    }
+
+    if type is QuotaType.by_bytes:
+        payload["maxBytes"] = str(value)
+    elif type is QuotaType.by_files:
+        payload["maxFiles"] = value
+    elif type is QuotaType.none:
+        payload["maxBytes"] = None
+        payload["maxFiles"] = None
+
+    if max_urls is not MISSING:
+        payload["maxUrls"] = max_urls
+
+    return payload
 
 
 def guess_mimetype_by_magicnumber(data: bytes) -> Optional[str]:

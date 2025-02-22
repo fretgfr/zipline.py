@@ -27,7 +27,7 @@ import io
 import mimetypes
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
 
 from .enums import OAuthProviderType, QuotaType, UserRole
 from .http import HTTPClient, Route
@@ -519,6 +519,32 @@ class Folder:  # DONE
         js = await self._http.request(r, json=payload)
         return Folder._from_data(js, http=self._http)
 
+    async def add_files(self, files: List[Union[File, str]], /) -> Folder:
+        """|coro|
+
+        Add multiple files to this folder.
+
+        Parameters
+        ----------
+        files: List[Union[:class:`~zipline.models.File`, :class:`str`]]
+            The files or file ids to add to this folder.
+
+        Returns
+        -------
+        :class:`~zipline.models.Folder`
+            A new instance with the latest information about this folder.
+        """
+        file_ids = [file.id if isinstance(file, File) else file for file in files]
+
+        payload = {
+            "files": file_ids,
+            "folder": self.id,
+        }
+
+        r = Route("PATCH", "/api/user/files/transaction")
+        js = await self._http.request(r, json=payload)
+        return Folder._from_data(js, http=self._http)
+
 
 @dataclass
 class User:  # MOSTLY DONE: # TODO repr the UserViewSettings | Maybe implement an Avatar class that decodes the b64?
@@ -537,7 +563,7 @@ class User:  # MOSTLY DONE: # TODO repr the UserViewSettings | Maybe implement a
         The last time this user was updated.
     role: :class:`~zipline.enums.UserRole`
         The role of this user.
-    view: :class:`dict`
+    view: :class:`~zipline.models.UserViewSettings`
         Custom view info for this user.
     sessions: List[:class:`str`]
         List of session ids this user has open.
@@ -581,7 +607,7 @@ class User:  # MOSTLY DONE: # TODO repr the UserViewSettings | Maybe implement a
     created_at: datetime.datetime
     updated_at: datetime.datetime
     role: UserRole
-    view: Optional[JSON]
+    view: Optional[UserViewSettings]
     sessions: List[str]
     oauth_providers: List[OAuthProvider]
     totp_secret: Optional[str]
@@ -600,7 +626,7 @@ class User:  # MOSTLY DONE: # TODO repr the UserViewSettings | Maybe implement a
             parse_iso_timestamp(data["createdAt"]),
             parse_iso_timestamp(data["updatedAt"]),
             UserRole(data["role"]),
-            data.get("view"),
+            UserViewSettings._from_data(data["view"]) if "view" in data else None,
             data["sessions"],
             data["oauthProviders"],
             data.get("totpSecret"),
@@ -1589,8 +1615,68 @@ class Thumbnail:  # DONE
         self.path = path
 
 
-class UserViewSettings:  # TODO
-    ...
+@dataclass
+class UserViewSettings:
+    """
+    Represents view settings for a Zipline :class:`~zipline.models.User`.
+
+    Attributes
+    ----------
+    enabled: Optional[:class:`bool`]
+        Whether the view settings are enabled.
+    align: Optional[Literal['left', 'center', 'right']]
+        How the content should be aligned on the page.
+    show_mimetype: Optional[:class:`bool`]
+        Whether the content's MIME type should be displayed.
+    content: Optional[:class:`str`]
+        The view content.
+    embed: Optional[:class:`bool`]
+        Whether embed tags should be present.
+    embed_title: Optional[:class:`str`]
+        The title of the embed the content will generate, if applicable.
+    embed_description: Optional[:class:`str`]
+        The description of the embed the content will generate, if applicable.
+    embed_color: Optional[:class:`str`]
+        The color of the embed the content will generate, if applicable.
+    embed_site_name: Optional[:class:`str`]
+        The name of the site the embed will redirect to, if applicable.
+    """
+
+    __slots__ = (
+        "enabled",
+        "align",
+        "show_mimetype",
+        "content",
+        "embed",
+        "embed_title",
+        "embed_description",
+        "embed_color",
+        "embed_site_name",
+    )
+
+    enabled: Optional[bool]
+    align: Optional[Literal["left", "center", "right"]]
+    show_mimetype: Optional[bool]
+    content: Optional[str]
+    embed: Optional[bool]
+    embed_title: Optional[str]
+    embed_description: Optional[str]
+    embed_color: Optional[str]
+    embed_site_name: Optional[str]
+
+    @classmethod
+    def _from_data(cls, data: Dict[str, Any], /) -> UserViewSettings:
+        return cls(
+            data.get("enabled"),
+            data.get("align"),
+            data.get("showMimetype"),
+            data.get("content"),
+            data.get("embed"),
+            data.get("embedTitle"),
+            data.get("embedDescription"),
+            data.get("embedColor"),
+            data.get("embedSiteName"),
+        )
 
 
 @dataclass

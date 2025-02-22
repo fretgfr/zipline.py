@@ -375,7 +375,9 @@ class Client:
         js = await self.http.request(r, params=params)
         return [Folder._from_data(data, http=self.http) for data in js]
 
-    async def create_folder(self, name: str, /, public: bool = False) -> Folder:  # DONE
+    async def create_folder(
+        self, name: str, /, files: Optional[List[Union[File, str]]] = None, public: bool = False
+    ) -> Folder:  # DONE
         """|coro|
 
         Creates a folder.
@@ -386,10 +388,8 @@ class Client:
             The name of the folder to create.
         public: :class:`bool`
             Whether the created folder should be public, by default False.
-        files: Optional[List[:class:`~zipline.models.File`]]
-            Files that should be added to the created folder, by default None
-
-            .. versionremoved:: 0.21.0
+        files: Optional[List[Union[:class:`~zipline.models.File`, :class:`str`]]]
+            Files that should be added to the created folder, if given.
 
         Returns
         -------
@@ -402,6 +402,11 @@ class Client:
             The server could not process the request.
         """
         data = {"name": name, "isPublic": public}
+
+        if files:
+            file_ids = [file.id if isinstance(file, File) else file for file in files]
+            data["files"] = file_ids
+
         r = Route("POST", "/api/user/folders")
         js = await self.http.request(r, json=data)
         return Folder._from_data(js, http=self.http)

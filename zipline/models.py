@@ -626,7 +626,7 @@ class User:  # MOSTLY DONE: # TODO repr the UserViewSettings | Maybe implement a
             parse_iso_timestamp(data["createdAt"]),
             parse_iso_timestamp(data["updatedAt"]),
             UserRole(data["role"]),
-            UserViewSettings._from_data(data["view"]) if "view" in data else None,
+            UserViewSettings._from_data(data["view"]) if "view" in data and data['view'] is not None else None,
             data["sessions"],
             data["oauthProviders"],
             data.get("totpSecret"),

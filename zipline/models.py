@@ -644,7 +644,7 @@ class User:  # MOSTLY DONE: # TODO repr the UserViewSettings | Maybe implement a
             The new username for this user, if given.
         password: Optional[:class:`str`]
             The new password for this user, if given.
-        avatar: Optional[Tuple[:class:`str`, :class:`]]
+        avatar: Optional[Tuple[:class:`str`, :class:`bytes`]]
             The new avatar for this user, if given.
         role: Optional[:class:`~zipline.enums.UserRole`]
             The new role for this user, if given.

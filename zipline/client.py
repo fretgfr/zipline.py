@@ -413,7 +413,7 @@ class Client:
 
         Parameters
         ----------
-        id: :class:`int`
+        id: :class:`str`
             The id of the folder to get.
 
         Returns

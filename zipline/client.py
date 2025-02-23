@@ -69,14 +69,14 @@ class Client:
         self.server_url = server_url
         self.http = HTTPClient(server_url, token)
 
-    async def get_version(self) -> ServerVersionInfo:  # Preliminary done, could be redesigned?
+    async def get_version(self) -> ServerVersionInfo:
         """|coro|
 
-        Gets the Zipline server version information
+        Gets the Zipline server version information.
 
         Returns
         -------
-        :class:`str`
+        :class:`~zipline.models.ServerVersionInfo`
             The version information for the server.
         """
         r = Route("GET", "/api/version")

@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import datetime
 from types import TracebackType
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
 
 import aiohttp
 
@@ -43,6 +43,7 @@ from .models import (
     UserFilesResponse,
     UserRole,
     UserStats,
+    Avatar,
 )
 from .utils import build_avatar_payload, to_iso_format, utcnow
 
@@ -116,7 +117,7 @@ class Client:
         username: str,
         password: str,
         role: UserRole = UserRole.user,
-        avatar: Optional[Tuple[str, bytes]] = None,
+        avatar: Optional[Avatar] = None,
     ) -> User:
         """|coro|
 
@@ -130,7 +131,7 @@ class Client:
             The password of the user to create.
         role: :class:`~zipline.enums.UserRole`
             The permissions level of the created User. Only available if used by a Super Admin.
-        avatar: Optional[Tuple[:class:`str`, :class:`bytes`]]
+        avatar: Optional[:class:`zipline.models.Avatar`]
             If given, a tuple containing a string denoting the MIME type of the data being uploaded and the data itself as bytes.
 
             Example:
@@ -142,7 +143,7 @@ class Client:
 
                 avatar_mime = 'image/png'
 
-                avatar = (avatar_mime, avatar_bytes)
+                avatar = zipline.Avatar(avatar_mime, avatar_bytes)
 
                 user = await create_user(
                     username='Example',
@@ -165,7 +166,7 @@ class Client:
         json = {"username": username, "password": password, "role": role.value}
 
         if avatar:
-            json["avatar"] = build_avatar_payload(*avatar)
+            json["avatar"] = avatar._to_payload_str()
 
         r = Route("POST", "/api/users")
         data = await self.http.request(r, json=json)

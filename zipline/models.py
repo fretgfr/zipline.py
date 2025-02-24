@@ -22,6 +22,7 @@ SOFTWARE.
 
 from __future__ import annotations
 
+import base64
 import datetime
 import io
 import mimetypes
@@ -29,7 +30,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
 
-from .enums import OAuthProviderType, QuotaType, UserRole
+from .enums import FileSearchField, FileSearchSort, OAuthProviderType, Order, QuotaType, RecentFilesFilter, UserRole
 from .http import HTTPClient, Route
 from .utils import MISSING, build_avatar_payload, generate_quota_payload, guess_mimetype_by_magicnumber, parse_iso_timestamp
 
@@ -547,7 +548,7 @@ class Folder:
 
 
 @dataclass
-class User:  # TODO Maybe implement an Avatar class that decodes the b64?
+class User:
     """
     Represents a Zipline user.
 
@@ -575,8 +576,8 @@ class User:  # TODO Maybe implement an Avatar class that decodes the b64?
         Passkeys registered for this user.
     quota: Optional[:class:`~zipline.models.UserQuota`]
         The quota this user has, if applicable.
-    avatar: Optional[:class:`str`]
-        The user's avatar, base64 encoded.
+    avatar: Optional[:class:`~zipline.models.Avatar`]
+        The user's avatar information, if available.
     password: Optional[:class:`str`]
         Password information for this user, if available.
     token: Optional[:class:`str`]
@@ -613,7 +614,7 @@ class User:  # TODO Maybe implement an Avatar class that decodes the b64?
     totp_secret: Optional[str]
     passkeys: Optional[List[UserPasskey]]
     quota: Optional[UserQuota]
-    avatar: Optional[str]
+    avatar: Optional[Avatar]
     password: Optional[str]
     token: Optional[str]
 
@@ -632,7 +633,7 @@ class User:  # TODO Maybe implement an Avatar class that decodes the b64?
             data.get("totpSecret"),
             data.get("passkeys"),
             data.get("quota"),
-            data.get("avatar"),
+            Avatar.from_coded_string(data["avatar"]) if "avatar" in data else None,
             data.get("password"),
             data.get("token"),
         )
@@ -656,7 +657,7 @@ class User:  # TODO Maybe implement an Avatar class that decodes the b64?
         *,
         username: Optional[str] = None,
         password: Optional[str] = None,
-        avatar: Optional[Tuple[str, bytes]] = None,
+        avatar: Optional[Avatar] = None,
         role: Optional[UserRole] = None,
         quota: Optional[Union[UserQuota, PartialQuota]] = None,
     ) -> User:
@@ -670,7 +671,7 @@ class User:  # TODO Maybe implement an Avatar class that decodes the b64?
             The new username for this user, if given.
         password: Optional[:class:`str`]
             The new password for this user, if given.
-        avatar: Optional[Tuple[:class:`str`, :class:`bytes`]]
+        avatar: Optional[:class:`~zipline.models.Avatar`]
             The new avatar for this user, if given.
         role: Optional[:class:`~zipline.enums.UserRole`]
             The new role for this user, if given.
@@ -689,7 +690,7 @@ class User:  # TODO Maybe implement an Avatar class that decodes the b64?
         if password:
             payload["password"] = password
         if avatar:
-            payload["avatar"] = build_avatar_payload(*avatar)
+            payload["avatar"] = avatar._to_payload_str()
         if role:
             payload["role"] = role.value
         if quota:
@@ -725,6 +726,65 @@ class User:  # TODO Maybe implement an Avatar class that decodes the b64?
         r = Route("DELETE", f"/api/users/{self.id}")
         js = await self._http.request(r, json=data)
         return User._from_data(js, http=self._http)
+
+    async def get_files(
+        self,
+        *,
+        page: int = 1,
+        per_page: int = 10,
+        filter: RecentFilesFilter = RecentFilesFilter.all,
+        favorite: Optional[bool] = None,
+        sort_by: FileSearchSort = FileSearchSort.created_at,
+        order: Order = Order.asc,
+        search_field: FileSearchField = FileSearchField.file_name,
+        search_query: Optional[str] = None,
+    ) -> UserFilesResponse:
+        """|coro|
+
+        Get files belonging to your user.
+
+        Parameters
+        ----------
+        page: :class:`int`
+            The page of files to get.
+        per_page: :class:`int`
+            How many files should be returned per page.
+        filter: :class:`~zipline.enums.RecentFilesFilter`
+            A filter to apply to the files retrieved.
+        favorite: Optional[:class:`bool`]
+            Whether to search for only favorited or unfavorited files. None for all files.
+        sort_by: :class:`~zipline.enums.FileSearchSort`
+            How the results should be sorted. Defaults to creation datetime.
+        order: :class:`~zipline.enums.Order`
+            How the results should be ordered. Defaults to ascending.
+        search_field: :class:`~zipline.enums.FileSearchField`
+            What file attribute to search by. Defaults to file name.
+        search_query: Optional[:class:`str`]
+            The query to use in the search.
+
+        Returns
+        -------
+        :class:`~zipline.models.UserFilesResponse`
+            The requested search results.
+        """
+        params = {"sortBy": sort_by.value, "order": order.value, "id": self.id}
+
+        if page:
+            params["page"] = str(page)
+        if per_page:
+            params["perpage"] = str(per_page)
+        if filter:
+            params["filter"] = filter.value
+        if favorite:
+            params["favorite"] = "true" if favorite else "false"
+        if search_field:
+            params["searchField"] = search_field.value
+        if search_query:
+            params["searchQuery"] = search_query
+
+        r = Route("GET", "/api/user/files")
+        js = await self._http.request(r, params=params)
+        return UserFilesResponse._from_data(js)
 
 
 @dataclass
@@ -1799,3 +1859,42 @@ class UserFilesResponse:
     def files(self) -> List[File]:
         """Alias for ``page``."""
         return self.page
+
+
+class Avatar:
+    """
+    Wraps the representation of avatars in Zipline.
+
+    Attributes
+    ----------
+    mime: :class:`str`
+        The MIME type of the data.
+    data: :class:`bytes`
+        The avatar data itself.
+    """
+
+    __slots__ = ("mime", "data")
+
+    def __init__(self, mime: str, data: bytes):
+        self.mime = mime
+        self.data = data
+
+    @classmethod
+    def from_coded_string(cls, coded_str: str) -> Avatar:
+        mime_part, data = coded_str.split(";")
+
+        mime_part = mime_part[5:]
+        data = base64.b64decode(data[7:])
+
+        return cls(mime_part, data)
+
+    def _to_payload_str(self) -> str:
+        """
+        Returns the base64 encoded string for use in Zipline requests.
+
+        Returns
+        -------
+        :class:`str`
+            The string for use in requests.
+        """
+        return build_avatar_payload(self.mime, self.data)

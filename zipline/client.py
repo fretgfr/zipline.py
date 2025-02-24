@@ -678,7 +678,7 @@ class Client:
 
         r = Route("GET", "/api/user/files")
         js = await self.http.request(r, params=params)
-        return UserFilesResponse._from_data(js)
+        return UserFilesResponse._from_data(js, http=self.http)
 
     async def get_recent_files(
         self,

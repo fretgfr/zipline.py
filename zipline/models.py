@@ -157,7 +157,7 @@ class File:
             data.get("password"),
             data.get("folderId"),
             data.get("thumbnail"),
-            data.get("tags"),
+            [Tag._from_data(d, http=http) for d in data["tags"]] if "tags" in data else None,
             data.get("url"),
         )
 
@@ -786,7 +786,7 @@ class User:
 
         r = Route("GET", "/api/user/files")
         js = await self._http.request(r, params=params)
-        return UserFilesResponse._from_data(js)
+        return UserFilesResponse._from_data(js, http=self._http)
 
 
 @dataclass
@@ -1849,9 +1849,9 @@ class UserFilesResponse:
     pages: Optional[int]
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /) -> UserFilesResponse:
+    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> UserFilesResponse:
         return cls(
-            data["page"],
+            [File._from_data(d, http) for d in data["page"]],
             data.get("search"),
             data.get("total"),
             data.get("pages"),

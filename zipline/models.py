@@ -28,7 +28,7 @@ import io
 import mimetypes
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Type, Union
 
 from .enums import FileSearchField, FileSearchSort, OAuthProviderType, Order, QuotaType, RecentFilesFilter, UserRole
 from .http import HTTPClient, Route

@@ -32,6 +32,7 @@ from .enums import FileSearchField, FileSearchSort, NameFormat, Order, RecentFil
 from .http import HTTPClient, Route
 from .models import (
     URL,
+    Avatar,
     File,
     FileData,
     Folder,
@@ -43,9 +44,8 @@ from .models import (
     UserFilesResponse,
     UserRole,
     UserStats,
-    Avatar,
 )
-from .utils import build_avatar_payload, to_iso_format, utcnow
+from .utils import to_iso_format, utcnow
 
 if TYPE_CHECKING:
     from typing_extensions import Self

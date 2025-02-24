@@ -1859,7 +1859,7 @@ class UserFilesResponse:
 
     @property
     def files(self) -> List[File]:
-        """Alias for ``page``."""
+        """Alias for :attr:`~zipline.models.UserFilesResponse.page`."""
         return self.page
 
 

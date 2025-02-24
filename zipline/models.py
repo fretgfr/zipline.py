@@ -53,6 +53,8 @@ __all__ = (
     "UserViewSettings",
     "ServerVersionInfo",
     "UserStats",
+    "UserFilesResponse",
+    "Avatar",
 )
 
 JSON = Union[Dict[str, Any], List[Any], int, str, float, bool, Type[None]]

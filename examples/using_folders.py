@@ -11,7 +11,9 @@ async def main():
         def file_mimetype(file: zipline.File) -> str:
             return file.type
 
-        all_files = sorted(await client.get_all_files(), key=file_mimetype)
+        resp = await client.get_files(per_page=1_000_000)
+
+        all_files = sorted(resp.files, key=file_mimetype)
 
         for mimetype, mime_files in itertools.groupby(all_files, file_mimetype):
             folder = await client.create_folder(mimetype)

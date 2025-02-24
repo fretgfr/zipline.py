@@ -7,12 +7,14 @@ import asyncio
 
 import zipline
 
+
 async def main():
     async with zipline.Client("your_zipline_site.com", "your_zipline_token") as client:
-        files = await client.get_all_files()
+        resp = await client.get_files()
 
-        for file in files:
+        for file in resp.page:
             print(file.name)
+
 
 asyncio.run(main())
 ```

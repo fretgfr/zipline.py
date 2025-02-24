@@ -28,9 +28,22 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type, Union
 
 import aiohttp
 
-from .enums import NameFormat, RecentFilesFilter
+from .enums import FileSearchField, FileSearchSort, NameFormat, Order, RecentFilesFilter
 from .http import HTTPClient, Route
-from .models import URL, File, FileData, Folder, Invite, ServerVersionInfo, Tag, UploadResponse, User, UserRole, UserStats
+from .models import (
+    URL,
+    File,
+    FileData,
+    Folder,
+    Invite,
+    ServerVersionInfo,
+    Tag,
+    UploadResponse,
+    User,
+    UserFilesResponse,
+    UserRole,
+    UserStats,
+)
 from .utils import build_avatar_payload, to_iso_format, utcnow
 
 if TYPE_CHECKING:
@@ -607,19 +620,64 @@ class Client:
         return Tag._from_data(js, http=self.http)
 
     # TODO get_user_files or User.get_files is possible by passing an `id` param to /api/user/files with the value of a user id.
-    async def get_all_files(self) -> List[File]:  # needs to be rethought.
+    async def get_files(
+        self,
+        *,
+        page: int = 1,
+        per_page: int = 10,
+        filter: RecentFilesFilter = RecentFilesFilter.all,
+        favorite: Optional[bool] = None,
+        sort_by: FileSearchSort = FileSearchSort.created_at,
+        order: Order = Order.asc,
+        search_field: FileSearchField = FileSearchField.file_name,
+        search_query: Optional[str] = None,
+    ) -> UserFilesResponse:
         """|coro|
 
-        Gets all files belonging to your user.
+        Get files belonging to your user.
+
+        Parameters
+        ----------
+        page: :class:`int`
+            The page of files to get.
+        per_page: :class:`int`
+            How many files should be returned per page.
+        filter: :class:`~zipline.enums.RecentFilesFilter`
+            A filter to apply to the files retrieved.
+        favorite: Optional[:class:`bool`]
+            Whether to search for only favorited or unfavorited files. None for all files.
+        sort_by: :class:`~zipline.enums.FileSearchSort`
+            How the results should be sorted. Defaults to creation datetime.
+        order: :class:`~zipline.enums.Order`
+            How the results should be ordered. Defaults to ascending.
+        search_field: :class:`~zipline.enums.FileSearchField`
+            What file attribute to search by. Defaults to file name.
+        search_query: Optional[:class:`str`]
+            The query to use in the search.
 
         Returns
         -------
-        List[:class:`~zipline.models.File`]
-            The files belonging to your user.
+        :class:`~zipline.models.UserFilesResponse`
+            The requested search results.
         """
+        params = {"sortBy": sort_by.value, "order": order.value}
+
+        if page:
+            params["page"] = str(page)
+        if per_page:
+            params["perpage"] = str(per_page)
+        if filter:
+            params["filter"] = filter.value
+        if favorite:
+            params["favorite"] = "true" if favorite else "false"
+        if search_field:
+            params["searchField"] = search_field.value
+        if search_query:
+            params["searchQuery"] = search_query
+
         r = Route("GET", "/api/user/files")
-        js = await self.http.request(r)
-        return [File._from_data(data, http=self.http) for data in js]
+        js = await self.http.request(r, params=params)
+        return UserFilesResponse._from_data(js)
 
     async def get_recent_files(
         self,

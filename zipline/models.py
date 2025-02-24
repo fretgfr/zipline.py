@@ -1761,3 +1761,36 @@ class UserStats:
             data["urlViews"],
             data["sortCountType"],
         )
+
+
+@dataclass
+class UserFilesResponse:
+    """
+    Represents a response to a file search on Zipline.
+
+    Attributes
+    ----------
+    page: List[:class:`~zipline.models.File`]
+        The files on this page.
+    search: Optional[Dict[:class:`str`, Any]]
+        Search parameters that were passed.
+    total: Optional[:class:`int`]
+        The total number of items matching the search.
+    pages: Optional[:class:`int`]
+        The number of pages available.
+    """
+
+    __slots__ = ("page", "search", "total", "pages")
+    page: List[File]
+    search: Optional[Dict[str, Any]]
+    total: Optional[int]
+    pages: Optional[int]
+
+    @classmethod
+    def _from_data(cls, data: Dict[str, Any], /) -> UserFilesResponse:
+        return cls(
+            data["page"],
+            data.get("search"),
+            data.get("total"),
+            data.get("pages"),
+        )

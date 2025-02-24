@@ -87,6 +87,10 @@ zipline.models module
    :members:
    :show-inheritance:
 
+.. autoclass:: zipline.models.UserFilesResponse
+   :members:
+   :show-inheritance:
+
 
 zipline.enums module
 --------------------
@@ -110,6 +114,18 @@ zipline.enums module
    :show-inheritance:
 
 .. autoclass:: zipline.enums.OAuthProviderType
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.enums.OAuthProvider
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.enums.FileSearchField
+   :members:
+   :show-inheritance:
+
+.. autoclass:: zipline.enums.FileSearchSort
    :members:
    :show-inheritance:
 

@@ -64,3 +64,29 @@ class OAuthProviderType(Enum):
     google = "GOOGLE"
     github = "GITHUB"
     oidc = "OIDC"
+
+
+class Order(Enum):
+    asc = "asc"
+    desc = "desc"
+
+
+class FileSearchField(Enum):
+    original_name = "originalName"
+    type = "type"
+    tags = "tags"
+    id = "id"
+    file_name = "name"
+
+
+class FileSearchSort(Enum):
+    id = "id"
+    created_at = "createdAt"
+    updated_at = "updatedAt"
+    deletes_at = "deletesAt"
+    file_name = "name"
+    original_name = "originalName"
+    size = "size"
+    type = "type"
+    views = "views"
+    favorite = "favorite"

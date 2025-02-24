@@ -1794,3 +1794,8 @@ class UserFilesResponse:
             data.get("total"),
             data.get("pages"),
         )
+
+    @property
+    def files(self) -> List[File]:
+        """Alias for ``page``."""
+        return self.page

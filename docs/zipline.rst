@@ -91,6 +91,10 @@ zipline.models module
    :members:
    :show-inheritance:
 
+.. autoclass:: zipline.models.Avatar
+   :members:
+   :show-inheritance:
+
 
 zipline.enums module
 --------------------

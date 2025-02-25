@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import datetime
 from types import TracebackType
-from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union, Sequence
+from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Sequence, Type, Union, overload
 
 import aiohttp
 
@@ -722,22 +722,55 @@ class Client:
         js = await self.http.request(r, params=query_params)
         return [File._from_data(data, http=self.http) for data in js]
 
-    async def upload_file(  # Preliminary done, maybe not
+    @overload
+    async def upload_file(
+        self,
+        payload: FileData,
+        *,
+        format: NameFormat = ...,
+        compression_percent: int = ...,
+        expiry: Optional[datetime.datetime] = ...,
+        password: Optional[str] = ...,
+        max_views: Optional[int] = ...,
+        override_name: Optional[str] = ...,
+        original_name: Optional[str] = ...,
+        folder: Optional[Union[Folder, str]] = ...,
+        override_extension: Optional[str] = ...,
+        text_only: Literal[False] = ...,
+    ) -> UploadResponse: ...
+
+    @overload
+    async def upload_file(
+        self,
+        payload: FileData,
+        *,
+        format: NameFormat = ...,
+        compression_percent: int = ...,
+        expiry: Optional[datetime.datetime] = ...,
+        password: Optional[str] = ...,
+        max_views: Optional[int] = ...,
+        override_name: Optional[str] = ...,
+        original_name: Optional[str] = ...,
+        folder: Optional[Union[Folder, str]] = ...,
+        override_extension: Optional[str] = ...,
+        text_only: Literal[True],
+    ) -> str: ...
+
+    async def upload_file(
         self,
         payload: FileData,
         *,
         format: NameFormat = NameFormat.uuid,
         compression_percent: int = 0,
-        expiry: Optional[datetime.datetime] = None,
+        expiry: Optional[datetime.datetime] = None,  # TODO Support time offsets.
         password: Optional[str] = None,
         max_views: Optional[int] = None,
         override_name: Optional[str] = None,
         original_name: Optional[str] = None,
         folder: Optional[Union[Folder, str]] = None,
         override_extension: Optional[str] = None,
-    ) -> (
-        UploadResponse
-    ):  # TODO x-zipline-no-json can return only a url, maybe support this with an override? Also, x-zipline-domain?
+        text_only: bool = False,
+    ) -> Union[UploadResponse, str]:  # TODO Also, x-zipline-domain?
         """|coro|
 
         Upload a file to Zipline.
@@ -783,11 +816,19 @@ class Client:
             The extension to use for this file instead of the original.
 
             .. versionadded:: 0.21.0
+        text_only: :class:`bool`
+            If True this method returns a simple string containing the url of the uploaded file, by default False.
+
+            .. versionadded:: 0.25.0
 
         Returns
         -------
-        :class:`~zipline.models.UploadResponse`
+        Union[:class:`~zipline.models.UploadResponse`, :class:`str`]
             Information about the file uploaded.
+
+            .. versionchanged:: 0.25.0
+
+                This now returns a string if text_only is True.
 
         Raises
         ------
@@ -827,13 +868,15 @@ class Client:
             headers["X-Zipline-File-Extension"] = override_extension
         if folder:
             headers["X-Zipline-Folder"] = folder.id if isinstance(folder, Folder) else folder
+        if text_only:
+            headers["X-Zipline-No-Json"] = "true"
 
         formdata = aiohttp.FormData()
         formdata.add_field("file", payload.data, filename=payload.filename, content_type=payload.mimetype)
 
         r = Route("POST", "/api/upload")
-        js = await self.http.request(r, headers=headers, data=formdata)
-        return UploadResponse._from_data(js, http=self.http)
+        res = await self.http.request(r, headers=headers, data=formdata)
+        return UploadResponse._from_data(res, http=self.http) if text_only is False else res
 
     async def close(self) -> None:
         """|coro|

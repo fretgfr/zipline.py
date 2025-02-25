@@ -288,6 +288,8 @@ def guess_mimetype_by_magicnumber(data: bytes) -> Optional[str]:
     """
     Sourced: https://en.wikipedia.org/wiki/List_of_file_signatures
 
+    16 bytes of input recommended.
+
     Handled types:
         - jpeg
         - png
@@ -316,3 +318,10 @@ def guess_mimetype_by_magicnumber(data: bytes) -> Optional[str]:
         return "video/quicktime"
     else:
         return None
+
+
+def key_valid_not_none(key: str, dict_: Dict[str, Any]) -> bool:
+    if key in dict_:
+        if dict_[key] is not None:
+            return True
+    return False

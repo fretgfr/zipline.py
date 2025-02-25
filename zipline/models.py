@@ -28,11 +28,19 @@ import io
 import mimetypes
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Type, Union
 
 from .enums import FileSearchField, FileSearchSort, OAuthProviderType, Order, QuotaType, RecentFilesFilter, UserRole
+from .errors import ZiplineError
 from .http import HTTPClient, Route
-from .utils import MISSING, build_avatar_payload, generate_quota_payload, guess_mimetype_by_magicnumber, parse_iso_timestamp
+from .utils import (
+    MISSING,
+    build_avatar_payload,
+    generate_quota_payload,
+    guess_mimetype_by_magicnumber,
+    key_valid_not_none,
+    parse_iso_timestamp,
+)
 
 __all__ = (
     "File",
@@ -135,7 +143,7 @@ class File:
     max_views: Optional[int]
     password: Optional[Union[str, bool]]
     folder_id: Optional[str]
-    thumbnail: Optional[Thumbnail]  # TODO repr this object, ask diced how tf these work
+    thumbnail: Optional[Thumbnail]
     tags: Optional[List[Tag]]
     url: Optional[str]
 
@@ -146,7 +154,7 @@ class File:
             data["id"],
             parse_iso_timestamp(data["createdAt"]),
             parse_iso_timestamp(data["updatedAt"]),
-            parse_iso_timestamp(data["deletesAt"]) if "deletesAt" in data and data["deletesAt"] is not None else None,
+            parse_iso_timestamp(data["deletesAt"]) if key_valid_not_none("deletesAt", data) else None,
             data["favorite"],
             data.get("originalName"),
             data["name"],
@@ -156,7 +164,7 @@ class File:
             data.get("maxViews"),
             data.get("password"),
             data.get("folderId"),
-            data.get("thumbnail"),
+            Thumbnail._from_data(data["thumbnail"]) if key_valid_not_none("thumbnail", data) else None,
             [Tag._from_data(d, http=http) for d in data["tags"]] if "tags" in data else None,
             data.get("url"),
         )
@@ -250,7 +258,7 @@ class File:
         self,
         *,
         favorite: Optional[bool] = None,
-        tags: Optional[List[Tag]] = None,
+        tags: Optional[Sequence[Tag]] = None,
         max_views: Optional[int] = None,
         original_name: Optional[str] = None,
         password: Optional[str] = None,
@@ -264,7 +272,7 @@ class File:
         ----------
         favorite: Optional[:class:`bool`]
             The new favorite status of the file, if given.
-        tags: Optional[List[:class:`~zipline.models.Tag`]]
+        tags: Optional[Sequence[:class:`~zipline.models.Tag`]]
             Tag to apply to this file, if given.
         max_views: Optional[:class:`int`]
             The new maximum views of the file, if given.
@@ -423,7 +431,7 @@ class Folder:
             parse_iso_timestamp(data["updatedAt"]),
             data["name"],
             data["public"],
-            [File._from_data(file_data, http) for file_data in data["files"]] if "files" in data else None,  # TODO verify.
+            [File._from_data(file_data, http) for file_data in data["files"]] if "files" in data else None,
             User._from_data(data["user"], http) if "user" in data else None,
             data["userId"],
         )
@@ -522,14 +530,14 @@ class Folder:
         js = await self._http.request(r, json=payload)
         return Folder._from_data(js, http=self._http)
 
-    async def add_files(self, files: List[Union[File, str]], /) -> Folder:
+    async def add_files(self, files: Sequence[Union[File, str]], /) -> Folder:
         """|coro|
 
         Add multiple files to this folder.
 
         Parameters
         ----------
-        files: List[Union[:class:`~zipline.models.File`, :class:`str`]]
+        files: Sequence[Union[:class:`~zipline.models.File`, :class:`str`]]
             The files or file ids to add to this folder.
 
         Returns
@@ -629,13 +637,13 @@ class User:
             parse_iso_timestamp(data["createdAt"]),
             parse_iso_timestamp(data["updatedAt"]),
             UserRole(data["role"]),
-            UserViewSettings._from_data(data["view"]) if "view" in data and data["view"] is not None else None,
+            UserViewSettings._from_data(data["view"]) if key_valid_not_none("view", data) else None,
             data["sessions"],
-            data["oauthProviders"],
+            [OAuthProvider._from_data(d) for d in data["oauthProviders"]],
             data.get("totpSecret"),
-            data.get("passkeys"),
-            data.get("quota"),
-            Avatar.from_coded_string(data["avatar"]) if "avatar" in data else None,
+            [UserPasskey._from_data(d) for d in data["passkeys"]] if key_valid_not_none("passkeys", data) else None,
+            UserQuota._from_data(data["quota"], http=http) if key_valid_not_none("quota", data) else None,
+            Avatar.from_coded_string(data["avatar"]) if key_valid_not_none("avatar", data) else None,
             data.get("password"),
             data.get("token"),
         )
@@ -897,7 +905,7 @@ class Invite:
             data["id"],
             parse_iso_timestamp(data["createdAt"]),
             parse_iso_timestamp(data["updatedAt"]),
-            parse_iso_timestamp(data["expiresAt"]) if "expiresAt" in data and data["expiresAt"] is not None else None,
+            parse_iso_timestamp(data["expiresAt"]) if key_valid_not_none("expiresAt", data) else None,
             data["code"],
             data["uses"],
             data.get("maxUses"),
@@ -1676,6 +1684,10 @@ class Thumbnail:
     def __init__(self, path: str):
         self.path = path
 
+    @classmethod
+    def _from_data(cls, data: Dict[str, Any]) -> Thumbnail:
+        return cls(data["path"])
+
 
 @dataclass
 class UserViewSettings:
@@ -1821,7 +1833,7 @@ class UserStats:
             data["avgStorageUsed"],
             data["urlsCreated"],
             data["urlViews"],
-            data["sortCountType"],
+            data["sortTypeCount"],
         )
 
 
@@ -1869,17 +1881,20 @@ class Avatar:
 
     Attributes
     ----------
-    mime: :class:`str`
-        The MIME type of the data.
     data: :class:`bytes`
         The avatar data itself.
+    mime: Optional[:class:`str`]
+        The MIME type of the data. If not given the library will attempt to guess the type.
     """
 
-    __slots__ = ("mime", "data")
+    __slots__ = ("data", "mime")
 
-    def __init__(self, mime: str, data: bytes):
-        self.mime = mime
+    def __init__(self, data: bytes, mime: Optional[str] = None):
         self.data = data
+        self.mime = mime or guess_mimetype_by_magicnumber(data[:16])
+
+        if not self.mime:
+            raise ZiplineError("could not determine mimetype of avatar and one was not provided.")
 
     @classmethod
     def from_coded_string(cls, coded_str: str) -> Avatar:
@@ -1888,7 +1903,7 @@ class Avatar:
         mime_part = mime_part[5:]
         data = base64.b64decode(data[7:])
 
-        return cls(mime_part, data)
+        return cls(data, mime_part)
 
     def _to_payload_str(self) -> str:
         """
@@ -1899,4 +1914,7 @@ class Avatar:
         :class:`str`
             The string for use in requests.
         """
+        if self.mime is None:
+            raise ZiplineError("mimetype undefined in Avatar, cannot export to payload string.")
+
         return build_avatar_payload(self.mime, self.data)

@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import datetime
 from types import TracebackType
-from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union, Sequence
 
 import aiohttp
 
@@ -390,7 +390,11 @@ class Client:
         return [Folder._from_data(data, http=self.http) for data in js]
 
     async def create_folder(
-        self, name: str, /, files: Optional[List[Union[File, str]]] = None, public: bool = False
+        self,
+        name: str,
+        /,
+        files: Optional[Sequence[Union[File, str]]] = None,
+        public: bool = False,
     ) -> Folder:
         """|coro|
 
@@ -402,7 +406,7 @@ class Client:
             The name of the folder to create.
         public: :class:`bool`
             Whether the created folder should be public, by default False.
-        files: Optional[List[Union[:class:`~zipline.models.File`, :class:`str`]]]
+        files: Optional[Sequence[Union[:class:`~zipline.models.File`, :class:`str`]]]
             Files that should be added to the created folder, if given.
 
         Returns
@@ -522,7 +526,7 @@ class Client:
         if password:
             headers["X-Zipline-Password"] = password
 
-        data = {"url": original_url, "vanity": vanity, "enabled": enabled}
+        data = {"destination": original_url, "vanity": vanity, "enabled": enabled}
 
         r = Route("POST", "/api/user/urls")
         js = await self.http.request(r, headers=headers, json=data)

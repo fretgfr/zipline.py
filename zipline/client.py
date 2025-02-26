@@ -498,11 +498,6 @@ class Client:
             Whether the url should be enabled for use, by default True.
 
             .. versionadded:: 0.21.0
-        zero_width_space: Optional[:class:`bool`]
-            Whether to incude zero width spaces in the returned url, by default False
-
-            .. versionremoved:: 0.21.0
-                This is no longer supported by the API.
 
         Returns
         -------
@@ -736,6 +731,7 @@ class Client:
         original_name: Optional[str] = ...,
         folder: Optional[Union[Folder, str]] = ...,
         override_extension: Optional[str] = ...,
+        override_domain: Optional[str] = None,
         text_only: Literal[False] = ...,
     ) -> UploadResponse: ...
 
@@ -753,6 +749,7 @@ class Client:
         original_name: Optional[str] = ...,
         folder: Optional[Union[Folder, str]] = ...,
         override_extension: Optional[str] = ...,
+        override_domain: Optional[str] = None,
         text_only: Literal[True],
     ) -> str: ...
 
@@ -769,6 +766,7 @@ class Client:
         original_name: Optional[str] = None,
         folder: Optional[Union[Folder, str]] = None,
         override_extension: Optional[str] = None,
+        override_domain: Optional[str] = None,
         text_only: bool = False,
     ) -> Union[UploadResponse, str]:  # TODO Also, x-zipline-domain?
         """|coro|
@@ -786,36 +784,25 @@ class Client:
         expiry: Optional[:class:`datetime.datetime`]
             When the uploaded file should expire, by default None.
         password: Optional[:class:`str`]
-            The password required to view the uploaded File, by default None.
-        zero_width_space: Optional[:class:`bool`]
-            Whether to include zero width spaces in the name of the uploaded File, by default False.
-
-            .. versionremoved:: 0.21.0
-                No longer supported by the API.
-        embed: Optional[:class:`bool`]
-            Whether to include embed data for the uploaded File, typically used on Discord, by default False.
-
-            .. versionremoved:: 0.21.0
-                No longer supported by the API.
+            The password required to view the uploaded file, by default None.
         max_views: Optional[:class:`int`]
-            The number of times the uploaded File can be viewed before it is deleted, by default None.
-        text: Optional[:class:`bool`]
-            Whether the File is a text file, by default False.
-
-            .. versionremoved:: 0.21.0
-                No longer supported by the API.
+            The number of times the uploaded file can be viewed before it is deleted, by default None.
         override_name: Optional[:class:`str`]
             A name to give the uploaded file. If provided this will override the server generated name, by default None.
         original_name: Optional[:class:`str`]
             The original_name of the file. None to not preserve this data, by default None.
         folder: Optional[Union[:class:`~zipline.models.Folder`, :class:`str`]]
-            The Folder (or it's ID) to place this upload into automatically.
+            The folder (or it's ID) to place this upload into automatically upon completion.
 
             .. versionadded:: 0.15.0
         override_extension: Optional[:class:`str`]
             The extension to use for this file instead of the original.
 
             .. versionadded:: 0.21.0
+        override_domain: Optional[:class:`str`]
+            The domain to return a url for. Must still be connected to the Zipline instance or it will not work.
+
+            .. versionadded:: 0.25.0
         text_only: :class:`bool`
             If True this method returns a simple string containing the url of the uploaded file, by default False.
 
@@ -868,6 +855,8 @@ class Client:
             headers["X-Zipline-File-Extension"] = override_extension
         if folder:
             headers["X-Zipline-Folder"] = folder.id if isinstance(folder, Folder) else folder
+        if override_domain:
+            headers["X-Zipline-Domain"] = override_domain
         if text_only:
             headers["X-Zipline-No-Json"] = "true"
 

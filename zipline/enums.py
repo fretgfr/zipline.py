@@ -35,7 +35,7 @@ __all__ = (
 
 
 class NameFormat(Enum):
-    """Format for the name of uploaded Files"""
+    """Format for the name of uploaded files."""
 
     original_name = "name"
     uuid = "uuid"
@@ -45,24 +45,32 @@ class NameFormat(Enum):
 
 
 class UserRole(Enum):
+    """The role of a Zipline user."""
+
     user = "USER"
     admin = "ADMIN"
     super_admin = "SUPERADMIN"
 
 
 class RecentFilesFilter(Enum):
+    """Filters that apply to recent files requests."""
+
     all = "all"
     none = "none"
     dashboard = "dashboard"
 
 
 class QuotaType(Enum):
+    """The different types of quotas that can be applied to a user."""
+
     by_bytes = "BY_BYTES"
     by_files = "BY_FILES"
-    none = "NONE"  # Only applicable when editing? TODO Verify?
+    none = "NONE"
 
 
 class OAuthProviderType(Enum):
+    """Supported types of OAuth providers."""
+
     discord = "DISCORD"
     google = "GOOGLE"
     github = "GITHUB"
@@ -70,11 +78,15 @@ class OAuthProviderType(Enum):
 
 
 class Order(Enum):
+    """Ordering of returned results."""
+
     asc = "asc"
     desc = "desc"
 
 
 class FileSearchField(Enum):
+    """Fields that can be searched by."""
+
     original_name = "originalName"
     type = "type"
     tags = "tags"
@@ -83,6 +95,8 @@ class FileSearchField(Enum):
 
 
 class FileSearchSort(Enum):
+    """Fields that files can be ordered by."""
+
     id = "id"
     created_at = "createdAt"
     updated_at = "updatedAt"

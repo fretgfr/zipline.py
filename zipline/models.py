@@ -214,7 +214,7 @@ class File:
 
         Parameters
         ----------
-        password : :class:`str`
+        password: :class:`str`
             The password to use when accessing this file.
 
         Returns

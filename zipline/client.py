@@ -617,7 +617,6 @@ class Client:
         js = await self.http.request(r)
         return Tag._from_data(js, http=self.http)
 
-    # TODO get_user_files or User.get_files is possible by passing an `id` param to /api/user/files with the value of a user id.
     async def get_files(
         self,
         *,
@@ -766,7 +765,7 @@ class Client:
         override_extension: Optional[str] = None,
         override_domain: Optional[str] = None,
         text_only: bool = False,
-    ) -> Union[UploadResponse, str]:  # TODO Also, x-zipline-domain?
+    ) -> Union[UploadResponse, str]:
         """|coro|
 
         Upload a file to Zipline.

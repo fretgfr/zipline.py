@@ -28,6 +28,9 @@ __all__ = (
     "RecentFilesFilter",
     "QuotaType",
     "OAuthProviderType",
+    "Order",
+    "FileSearchField",
+    "FileSearchSort",
 )
 
 

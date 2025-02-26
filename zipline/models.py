@@ -751,7 +751,11 @@ class User:
     ) -> UserFilesResponse:
         """|coro|
 
-        Get files belonging to your user.
+        Get files belonging to this user.
+
+        .. note::
+
+            This route requires that you have an account with the Super Admin type.
 
         Parameters
         ----------

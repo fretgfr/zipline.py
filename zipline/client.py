@@ -45,7 +45,7 @@ from .models import (
     UserRole,
     UserStats,
 )
-from .utils import to_iso_format, utcnow
+from .utils import dt_from_delta_or_dt, to_iso_format
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -294,8 +294,8 @@ class Client:
             If None is passed the invite will have unlimited uses.
 
             .. versionadded:: 0.21.0
-        expires_at: Optional[:class:`datetime.datetime`]
-            When the created invite(s) should expire. Defaults to 24 hours from creation.
+        expires_at: Optional[Union[:class:`datetime.datetime`, :class:`datetime.timedelta`]]
+            When the created invite(s) should expire.
 
             .. versionchanged:: 0.21.0
 
@@ -324,11 +324,9 @@ class Client:
 
         if expires_at is None:
             expiration = "never"
-        elif isinstance(expires_at, datetime.timedelta):
-            future_dt = utcnow() + expires_at
-            expiration = f"date={to_iso_format(future_dt)}"
-        elif isinstance(expires_at, datetime.datetime):
-            expiration = f"date={to_iso_format(expires_at)}"
+        elif isinstance(expires_at, (datetime.datetime, datetime.timedelta)):
+            exp = dt_from_delta_or_dt(expires_at)
+            expiration = f"date={to_iso_format(exp)}"
 
         data: Dict[str, Union[str, int]] = {"expiresAt": expiration}
 
@@ -724,7 +722,7 @@ class Client:
         *,
         format: NameFormat = ...,
         compression_percent: int = ...,
-        expiry: Optional[datetime.datetime] = ...,
+        expiry: Optional[Union[datetime.datetime, datetime.timedelta]] = None,
         password: Optional[str] = ...,
         max_views: Optional[int] = ...,
         override_name: Optional[str] = ...,
@@ -742,7 +740,7 @@ class Client:
         *,
         format: NameFormat = ...,
         compression_percent: int = ...,
-        expiry: Optional[datetime.datetime] = ...,
+        expiry: Optional[Union[datetime.datetime, datetime.timedelta]] = None,
         password: Optional[str] = ...,
         max_views: Optional[int] = ...,
         override_name: Optional[str] = ...,
@@ -759,7 +757,7 @@ class Client:
         *,
         format: NameFormat = NameFormat.uuid,
         compression_percent: int = 0,
-        expiry: Optional[datetime.datetime] = None,  # TODO Support time offsets.
+        expiry: Optional[Union[datetime.datetime, datetime.timedelta]] = None,
         password: Optional[str] = None,
         max_views: Optional[int] = None,
         override_name: Optional[str] = None,
@@ -781,8 +779,12 @@ class Client:
             The format of the name to assign to the uploaded file, by default :attr:`~zipline.enums.NameFormat.uuid`.
         compression_percent: Optional[:class:`int`]
             How compressed should the uploaded file be, by default 0.
-        expiry: Optional[:class:`datetime.datetime`]
+        expiry: Optional[Union[:class:`datetime.datetime`, :class:`datetime.timedelta`]]
             When the uploaded file should expire, by default None.
+
+            .. versionchanged:: 0.25.0
+
+                This parameter now accepts timedeltas as well as concrete datetimes.
         password: Optional[:class:`str`]
             The password required to view the uploaded file, by default None.
         max_views: Optional[:class:`int`]
@@ -842,11 +844,12 @@ class Client:
         }
 
         if expiry:
-            headers["X-Zipline-Deletes-At"] = f"date={expiry.isoformat()}" if expiry is not None else ""
+            exp = dt_from_delta_or_dt(expiry)
+            headers["X-Zipline-Deletes-At"] = f"date={to_iso_format(exp)}"
         if password:
-            headers["X-Zipline-Password"] = password if password is not None else ""
+            headers["X-Zipline-Password"] = password
         if max_views:
-            headers["X-Zipline-Max-Views"] = str(max_views) if max_views is not None else ""
+            headers["X-Zipline-Max-Views"] = str(max_views)
         if override_name:
             headers["X-Zipline-Filename"] = override_name
         if original_name:

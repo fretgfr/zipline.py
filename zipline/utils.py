@@ -264,7 +264,9 @@ MISSING: Any = _MissingSentinel()
 
 
 def generate_quota_payload(
-    type: QuotaType, value: Optional[int] = None, max_urls: Optional[int] = MISSING
+    type: QuotaType,
+    value: Optional[int] = None,
+    max_urls: Optional[int] = MISSING,
 ) -> Dict[str, Any]:
     payload: Dict[str, Any] = {
         "filesType": type.value,
@@ -282,6 +284,14 @@ def generate_quota_payload(
         payload["maxUrls"] = max_urls
 
     return payload
+
+
+def dt_from_delta_or_dt(input_: Union[datetime.datetime, datetime.timedelta], /) -> datetime.datetime:
+    """Returns a datetime from either a datetime or timedelta."""
+    if isinstance(input_, datetime.timedelta):
+        return utcnow() + input_
+
+    return input_
 
 
 def guess_mimetype_by_magicnumber(data: bytes) -> Optional[str]:

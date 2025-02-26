@@ -121,10 +121,6 @@ zipline.enums module
    :members:
    :show-inheritance:
 
-.. autoclass:: zipline.enums.OAuthProvider
-   :members:
-   :show-inheritance:
-
 .. autoclass:: zipline.enums.FileSearchField
    :members:
    :show-inheritance:

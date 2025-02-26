@@ -195,9 +195,9 @@ def safe_get(dict_: Dict[Any, Any], *keys: Any) -> Optional[Any]:
 
     Parameters
     ----------
-    dict_ : Dict[Any, Any]
+    dict_: Dict[Any, Any]
         The dictionary to get the key from
-    keys : Any
+    keys: Any
         The keys to get from the dictionary. Processed in order.
 
     Returns

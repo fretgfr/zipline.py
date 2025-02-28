@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import datetime
 from types import TracebackType
-from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Sequence, Type, Union, overload
+from typing import TYPE_CHECKING, AsyncGenerator, Dict, List, Literal, Optional, Sequence, Type, Union, overload
 
 import aiohttp
 
@@ -134,22 +134,22 @@ class Client:
         avatar: Optional[:class:`zipline.models.Avatar`]
             If given, a tuple containing a string denoting the MIME type of the data being uploaded and the data itself as bytes.
 
-            Example:
+            .. admonition:: Example
 
-            .. code:: python3
+                .. code-block:: python3
 
-                with open('avatar.png', 'rb') as fp:
-                    avatar_bytes = fp.read()
+                    with open('avatar.png', 'rb') as fp:
+                        avatar_bytes = fp.read()
 
-                avatar_mime = 'image/png'
+                    avatar_mime = 'image/png'
 
-                avatar = zipline.Avatar(avatar_mime, avatar_bytes)
+                    avatar = zipline.Avatar(avatar_mime, avatar_bytes)
 
-                user = await create_user(
-                    username='Example',
-                    password='s0m3th!ngs3cur3',
-                    avatar=avatar,
-                )
+                    user = await create_user(
+                        username='Example',
+                        password='s0m3th!ngs3cur3',
+                        avatar=avatar,
+                    )
 
         Returns
         -------
@@ -675,6 +675,76 @@ class Client:
         r = Route("GET", "/api/user/files")
         js = await self.http.request(r, params=params)
         return UserFilesResponse._from_data(js, http=self.http)
+
+    async def iter_files(
+        self,
+        *,
+        per_page: int = 10,
+        filter: RecentFilesFilter = RecentFilesFilter.all,
+        favorite: Optional[bool] = None,
+        sort_by: FileSearchSort = FileSearchSort.created_at,
+        order: Order = Order.asc,
+        search_field: FileSearchField = FileSearchField.file_name,
+        search_query: Optional[str] = None,
+    ) -> AsyncGenerator[List[File], None]:
+        """
+        Retrieves an :term:`asynchronous generator` of the pages of files owned by the current user that meet the defined criteria.
+
+        This method behaves in a similar fashion to :meth:`~zipline.client.Client.get_files`.
+
+        .. admonition:: Example
+
+            .. code-block:: python3
+
+                async for page in client.iter_files():
+                    for file in page:
+                        if file.deletes_at:
+                            print(f"{file.full_url} will be removed at: {file.deletes_at:%Y-%m-%d %H:%M:%S})
+
+        Parameters
+        ----------
+        per_page: :class:`int`
+            The number of results returned by each iteration, by default 10.
+        filter: :class:`~zipline.enums.RecentFilesFilter`
+            A filter to apply to the files retrieved.
+        favorite: Optional[:class:`bool`]
+            Whether to search for only favorited or unfavorited files. None for all files.
+        sort_by: :class:`~zipline.enums.FileSearchSort`
+            How the results should be sorted. Defaults to creation datetime.
+        order: :class:`~zipline.enums.Order`
+            How the results should be ordered. Defaults to ascending.
+        search_field: :class:`~zipline.enums.FileSearchField`
+            What file attribute to search by. Defaults to file name.
+        search_query: Optional[:class:`str`]
+            The query to use in the search.
+
+        Yields
+        ------
+        List[:class:`~zipline.models.File`]
+            Lists of files that meet the search criteria.
+        """
+
+        # Uses the same args, so why not...
+        async def _req_files(page_num):
+            return await self.get_files(
+                page=page_num,
+                per_page=per_page,
+                filter=filter,
+                favorite=favorite,
+                sort_by=sort_by,
+                order=order,
+                search_field=search_field,
+                search_query=search_query,
+            )
+
+        res = await _req_files(1)
+
+        yield res.files
+
+        if res.pages and res.pages > 1:
+            for page_num in range(2, res.pages + 1):
+                page = await _req_files(page_num)
+                yield page.files
 
     async def get_recent_files(
         self,

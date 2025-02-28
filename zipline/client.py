@@ -692,6 +692,8 @@ class Client:
 
         This method behaves in a similar fashion to :meth:`~zipline.client.Client.get_files`.
 
+        .. versionadded:: 0.25.0
+
         .. admonition:: Example
 
             .. code-block:: python3

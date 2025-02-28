@@ -331,7 +331,4 @@ def guess_mimetype_by_magicnumber(data: bytes) -> Optional[str]:
 
 
 def key_valid_not_none(key: str, dict_: Dict[str, Any]) -> bool:
-    if key in dict_:
-        if dict_[key] is not None:
-            return True
-    return False
+    return key in dict_ and dict_[key] is not None

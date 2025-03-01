@@ -621,7 +621,7 @@ class Client:
         self,
         *,
         page: int = 1,
-        per_page: int = 10,
+        per_page: int = 100,
         filter: RecentFilesFilter = RecentFilesFilter.all,
         favorite: Optional[bool] = None,
         sort_by: FileSearchSort = FileSearchSort.created_at,
@@ -679,14 +679,14 @@ class Client:
     async def iter_files(
         self,
         *,
-        per_page: int = 10,
+        per_page: int = 100,
         filter: RecentFilesFilter = RecentFilesFilter.all,
         favorite: Optional[bool] = None,
         sort_by: FileSearchSort = FileSearchSort.created_at,
         order: Order = Order.asc,
         search_field: FileSearchField = FileSearchField.file_name,
         search_query: Optional[str] = None,
-    ) -> AsyncGenerator[List[File], None]:
+    ) -> AsyncGenerator[File, None]:
         """
         Retrieves an :term:`asynchronous generator` of the pages of files owned by the current user that meet the defined criteria.
 
@@ -698,15 +698,14 @@ class Client:
 
             .. code-block:: python3
 
-                async for page in client.iter_files():
-                    for file in page:
-                        if file.deletes_at:
-                            print(f"{file.full_url} will be removed at: {file.deletes_at:%Y-%m-%d %H:%M:%S})
+                async for file in client.iter_files():
+                    if file.deletes_at:
+                        print(f"{file.full_url} will be removed at: {file.deletes_at:%Y-%m-%d %H:%M:%S})
 
         Parameters
         ----------
         per_page: :class:`int`
-            The number of results returned by each iteration, by default 10.
+            The number of results returned by each iteration, by default 100.
         filter: :class:`~zipline.enums.RecentFilesFilter`
             A filter to apply to the files retrieved.
         favorite: Optional[:class:`bool`]
@@ -722,8 +721,8 @@ class Client:
 
         Yields
         ------
-        List[:class:`~zipline.models.File`]
-            Lists of files that meet the search criteria.
+        :class:`~zipline.models.File`
+            Files that meet the search criteria.
         """
 
         # Uses the same args, so why not...
@@ -741,12 +740,14 @@ class Client:
 
         res = await _req_files(1)
 
-        yield res.files
+        for file in res.files:
+            yield file
 
         if res.pages and res.pages > 1:
             for page_num in range(2, res.pages + 1):
                 page = await _req_files(page_num)
-                yield page.files
+                for file in page.files:
+                    yield file
 
     async def get_recent_files(
         self,

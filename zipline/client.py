@@ -94,8 +94,8 @@ class Client:
             The version information for the server.
         """
         r = Route("GET", "/api/version")
-        js = await self.http.request(r)
-        return ServerVersionInfo._from_data(js)
+        data = await self.http.request(r)
+        return ServerVersionInfo._from_data(data)
 
     async def get_user_stats(self) -> UserStats:
         """|coro|
@@ -108,8 +108,8 @@ class Client:
             Stats for the current user.
         """
         r = Route("GET", "/api/user/stats")
-        js = await self.http.request(r)
-        return UserStats._from_data(js)
+        data = await self.http.request(r)
+        return UserStats._from_data(data)
 
     async def create_user(
         self,
@@ -195,8 +195,8 @@ class Client:
             A user with that id could not be found
         """
         r = Route("GET", f"/api/users/{id}")
-        js = await self.http.request(r)
-        return User._from_data(js, http=self.http)
+        data = await self.http.request(r)
+        return User._from_data(data, http=self.http)
 
     async def get_all_users(self) -> List[User]:
         """|coro|
@@ -214,8 +214,8 @@ class Client:
             You are not an administrator and cannot use this method.
         """
         r = Route("GET", "/api/users")
-        js = await self.http.request(r)
-        return [User._from_data(data, http=self.http) for data in js]
+        data = await self.http.request(r)
+        return [User._from_data(data, http=self.http) for data in data]
 
     async def delete_user(self, id, /, *, remove_data: bool = True) -> User:
         """|coro|
@@ -241,10 +241,10 @@ class Client:
         Forbidden
             You are not an administrator and cannot use this method.
         """
-        data = {"delete": remove_data}
+        payload = {"delete": remove_data}
         r = Route("DELETE", f"/api/users/{id}")
-        js = await self.http.request(r, json=data)
-        return User._from_data(js, http=self.http)
+        data = await self.http.request(r, json=payload)
+        return User._from_data(data, http=self.http)
 
     async def get_all_invites(self) -> List[Invite]:
         """|coro|
@@ -268,8 +268,8 @@ class Client:
             You are not an administrator and do not have permission to access this resource.
         """
         r = Route("GET", "/api/auth/invites")
-        js = await self.http.request(r)
-        return [Invite._from_data(data, http=self.http) for data in js]
+        data = await self.http.request(r)
+        return [Invite._from_data(d, http=self.http) for d in data]
 
     async def create_invite(
         self,
@@ -328,14 +328,14 @@ class Client:
             exp = dt_from_delta_or_dt(expires_at)
             expiration = f"date={to_iso_format(exp)}"
 
-        data: Dict[str, Union[str, int]] = {"expiresAt": expiration}
+        payload: Dict[str, Union[str, int]] = {"expiresAt": expiration}
 
         if max_uses is not None:
-            data["maxUses"] = max_uses
+            payload["maxUses"] = max_uses
 
         r = Route("POST", "/api/auth/invites")
-        js = await self.http.request(r, json=data)
-        return Invite._from_data(js, http=self.http)
+        data = await self.http.request(r, json=payload)
+        return Invite._from_data(data, http=self.http)
 
     async def delete_invite(self, id: str, /) -> Invite:
         """|coro|
@@ -360,8 +360,8 @@ class Client:
             No invite was found with the provided id.
         """
         r = Route("DELETE", f"/api/auth/invites/{id}")
-        js = await self.http.request(r)
-        return Invite._from_data(js, http=self.http)
+        data = await self.http.request(r)
+        return Invite._from_data(data, http=self.http)
 
     async def get_all_folders(self, *, with_files: bool = True) -> List[Folder]:
         """|coro|
@@ -384,8 +384,8 @@ class Client:
             params["noincl"] = "true"
 
         r = Route("GET", "/api/user/folders")
-        js = await self.http.request(r, params=params)
-        return [Folder._from_data(data, http=self.http) for data in js]
+        data = await self.http.request(r, params=params)
+        return [Folder._from_data(d, http=self.http) for d in data]
 
     async def create_folder(
         self,
@@ -417,15 +417,15 @@ class Client:
         BadRequest
             The server could not process the request.
         """
-        data = {"name": name, "isPublic": public}
+        payload = {"name": name, "isPublic": public}
 
         if files:
             file_ids = [file.id if isinstance(file, File) else file for file in files]
-            data["files"] = file_ids
+            payload["files"] = file_ids
 
         r = Route("POST", "/api/user/folders")
-        js = await self.http.request(r, json=data)
-        return Folder._from_data(js, http=self.http)
+        data = await self.http.request(r, json=payload)
+        return Folder._from_data(data, http=self.http)
 
     async def get_folder(self, id: str, /) -> Folder:
         """|coro|
@@ -450,8 +450,8 @@ class Client:
             A folder with that id could not be found.
         """
         r = Route("GET", f"/api/user/folders/{id}")
-        js = await self.http.request(r)
-        return Folder._from_data(js, http=self.http)
+        data = await self.http.request(r)
+        return Folder._from_data(data, http=self.http)
 
     async def get_all_urls(self) -> List[URL]:
         """|coro|
@@ -464,8 +464,8 @@ class Client:
             The requested shortened urls.
         """
         r = Route("GET", "/api/user/urls")
-        js = await self.http.request(r)
-        return [URL._from_data(data, http=self.http) for data in js]
+        data = await self.http.request(r)
+        return [URL._from_data(d, http=self.http) for d in data]
 
     async def shorten_url(
         self,
@@ -519,11 +519,11 @@ class Client:
         if password:
             headers["X-Zipline-Password"] = password
 
-        data = {"destination": original_url, "vanity": vanity, "enabled": enabled}
+        payload = {"destination": original_url, "vanity": vanity, "enabled": enabled}
 
         r = Route("POST", "/api/user/urls")
-        js = await self.http.request(r, headers=headers, json=data)
-        return URL._from_data(js, http=self.http)
+        data = await self.http.request(r, headers=headers, json=payload)
+        return URL._from_data(data, http=self.http)
 
     async def delete_url(self, id: str, /) -> URL:
         """|coro|
@@ -548,8 +548,8 @@ class Client:
             A url with that id could not be found.
         """
         r = Route("DELETE", f"/api/user/urls/{id}")
-        js = await self.http.request(r)
-        return URL._from_data(js, http=self.http)
+        data = await self.http.request(r)
+        return URL._from_data(data, http=self.http)
 
     async def get_all_tags(self) -> List[Tag]:
         """|coro|
@@ -562,8 +562,8 @@ class Client:
             The requested tags.
         """
         r = Route("GET", "/api/user/tags")
-        js = await self.http.request(r)
-        return [Tag._from_data(d, http=self.http) for d in js]
+        data = await self.http.request(r)
+        return [Tag._from_data(d, http=self.http) for d in data]
 
     async def get_tag(self, id: str, /) -> Tag:
         """|coro|
@@ -588,8 +588,8 @@ class Client:
             You do not have access to this tag.
         """
         r = Route("GET", f"/api/user/tags/{id}")
-        js = await self.http.request(r)
-        return Tag._from_data(js, http=self.http)
+        data = await self.http.request(r)
+        return Tag._from_data(data, http=self.http)
 
     async def delete_tag(self, id: str, /) -> Tag:
         """|coro|
@@ -614,8 +614,8 @@ class Client:
             A url with that id could not be found.
         """
         r = Route("DELETE", f"/api/user/tags/{id}")
-        js = await self.http.request(r)
-        return Tag._from_data(js, http=self.http)
+        data = await self.http.request(r)
+        return Tag._from_data(data, http=self.http)
 
     async def get_files(
         self,
@@ -673,8 +673,8 @@ class Client:
             params["searchQuery"] = search_query
 
         r = Route("GET", "/api/user/files")
-        js = await self.http.request(r, params=params)
-        return UserFilesResponse._from_data(js, http=self.http)
+        data = await self.http.request(r, params=params)
+        return UserFilesResponse._from_data(data, http=self.http)
 
     async def iter_files(
         self,
@@ -783,8 +783,8 @@ class Client:
 
         query_params = {"take": amount, "filter": filter.value}
         r = Route("GET", "/api/user/recent")
-        js = await self.http.request(r, params=query_params)
-        return [File._from_data(data, http=self.http) for data in js]
+        data = await self.http.request(r, params=query_params)
+        return [File._from_data(d, http=self.http) for d in data]
 
     @overload
     async def upload_file(
@@ -938,8 +938,8 @@ class Client:
         formdata.add_field("file", payload.data, filename=payload.filename, content_type=payload.mimetype)
 
         r = Route("POST", "/api/upload")
-        res = await self.http.request(r, headers=headers, data=formdata)
-        return UploadResponse._from_data(res, http=self.http) if text_only is False else res
+        data = await self.http.request(r, headers=headers, data=formdata)
+        return UploadResponse._from_data(data, http=self.http) if text_only is False else data
 
     async def close(self) -> None:
         """|coro|

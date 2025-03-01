@@ -148,7 +148,7 @@ class File:
     url: Optional[str]
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> File:
+    def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> File:
         return cls(
             http,
             data["id"],
@@ -237,8 +237,8 @@ class File:
             A new instance with the latest information about this file.
         """
         r = Route("GET", f"/api/user/files/{self.id}")
-        js = await self._http.request(r)
-        return File._from_data(js, http=self._http)
+        data = await self._http.request(r)
+        return File._from_data(data, http=self._http)
 
     async def delete(self) -> File:
         """|coro|
@@ -251,8 +251,8 @@ class File:
             A new instance with the latest information about this file.
         """
         r = Route("DELETE", f"/api/user/files/{self.id}")
-        js = await self._http.request(r)
-        return File._from_data(js, http=self._http)
+        data = await self._http.request(r)
+        return File._from_data(data, http=self._http)
 
     async def edit(
         self,
@@ -308,8 +308,8 @@ class File:
             payload["type"] = type
 
         r = Route("PATCH", f"/api/user/files/{self.id}")
-        js = await self._http.request(r, json=payload)
-        return File._from_data(js, http=self._http)
+        data = await self._http.request(r, json=payload)
+        return File._from_data(data, http=self._http)
 
     async def add_favorite(self) -> File:
         """|coro|
@@ -331,8 +331,8 @@ class File:
 
         payload = {"favorite": True}
         r = Route("PATCH", f"/api/user/files/{self.id}")
-        js = await self._http.request(r, json=payload)
-        return File._from_data(js, http=self._http)
+        data = await self._http.request(r, json=payload)
+        return File._from_data(data, http=self._http)
 
     async def remove_favorite(self) -> File:
         """|coro|
@@ -354,8 +354,8 @@ class File:
 
         payload = {"favorite": False}
         r = Route("PATCH", f"/api/user/files/{self.id}")
-        js = await self._http.request(r, json=payload)
-        return File._from_data(js, http=self._http)
+        data = await self._http.request(r, json=payload)
+        return File._from_data(data, http=self._http)
 
     async def remove_from_folder(self):
         """|coro|
@@ -423,7 +423,7 @@ class Folder:
     user_id: str
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> Folder:
+    def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> Folder:
         return cls(
             http,
             data["id"],
@@ -431,8 +431,8 @@ class Folder:
             parse_iso_timestamp(data["updatedAt"]),
             data["name"],
             data["public"],
-            [File._from_data(file_data, http) for file_data in data["files"]] if "files" in data else None,
-            User._from_data(data["user"], http) if "user" in data else None,
+            [File._from_data(file_data, http=http) for file_data in data["files"]] if "files" in data else None,
+            User._from_data(data["user"], http=http) if "user" in data else None,
             data["userId"],
         )
 
@@ -447,8 +447,8 @@ class Folder:
             A new instance with the latest information about this folder.
         """
         r = Route("GET", f"/api/user/folders/{self.id}")
-        js = await self._http.request(r)
-        return Folder._from_data(js, http=self._http)
+        data = await self._http.request(r)
+        return Folder._from_data(data, http=self._http)
 
     async def delete(self) -> Folder:
         """|coro|
@@ -460,10 +460,10 @@ class Folder:
         :class:`~zipline.models.Folder`
             A new instance with the latest information about this folder.
         """
-        data = {"delete": "folder"}
+        payload = {"delete": "folder"}
         r = Route("DELETE", f"/api/user/folders/{self.id}")
-        js = await self._http.request(r, json=data)
-        return Folder._from_data(js, self._http)
+        data = await self._http.request(r, json=payload)
+        return Folder._from_data(data, http=self._http)
 
     async def edit(self, *, name: str) -> Folder:
         """|coro|
@@ -480,10 +480,10 @@ class Folder:
         :class:`~zipline.models.Folder`
             The updated folder.
         """
-        data = {"name": name}
+        payload = {"name": name}
         r = Route("PATCH", f"/api/user/folders/{self.id}")
-        js = await self._http.request(r, json=data)
-        return Folder._from_data(js, http=self._http)
+        data = await self._http.request(r, json=payload)
+        return Folder._from_data(data, http=self._http)
 
     async def remove_file(self, file: Union[File, str], /) -> Folder:
         """|coro|
@@ -506,8 +506,8 @@ class Folder:
         }
 
         r = Route("DELETE", f"/api/user/folders/{self.id}")
-        js = await self._http.request(r, json=payload)
-        return Folder._from_data(js, http=self._http)
+        data = await self._http.request(r, json=payload)
+        return Folder._from_data(data, http=self._http)
 
     async def add_file(self, file: Union[File, str], /) -> Folder:
         """|coro|
@@ -527,8 +527,8 @@ class Folder:
         payload = {"id": file.id if isinstance(file, File) else file}
 
         r = Route("PUT", f"/api/user/folders/{self.id}")
-        js = await self._http.request(r, json=payload)
-        return Folder._from_data(js, http=self._http)
+        data = await self._http.request(r, json=payload)
+        return Folder._from_data(data, http=self._http)
 
     async def add_files(self, files: Sequence[Union[File, str]], /) -> Folder:
         """|coro|
@@ -553,8 +553,8 @@ class Folder:
         }
 
         r = Route("PATCH", "/api/user/files/transaction")
-        js = await self._http.request(r, json=payload)
-        return Folder._from_data(js, http=self._http)
+        data = await self._http.request(r, json=payload)
+        return Folder._from_data(data, http=self._http)
 
 
 @dataclass
@@ -629,7 +629,7 @@ class User:
     token: Optional[str]
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> User:
+    def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> User:
         return cls(
             http,
             data["id"],
@@ -659,8 +659,8 @@ class User:
             A new instance with the latest information about this user.
         """
         r = Route("GET", f"/api/users/{self.id}")
-        js = await self._http.request(r)
-        return User._from_data(js, http=self._http)
+        data = await self._http.request(r)
+        return User._from_data(data, http=self._http)
 
     async def edit(
         self,
@@ -707,8 +707,8 @@ class User:
             payload["quota"] = quota._to_dict()
 
         r = Route("PATCH", f"/api/users/{self.id}")
-        js = await self._http.request(r, json=payload)
-        return User._from_data(js, http=self._http)
+        data = await self._http.request(r, json=payload)
+        return User._from_data(data, http=self._http)
 
     async def delete(self, *, remove_data: bool = True) -> User:
         """|coro|
@@ -732,10 +732,10 @@ class User:
         Forbidden
             You are not an administrator and cannot use this method.
         """
-        data = {"delete": remove_data}
+        payload = {"delete": remove_data}
         r = Route("DELETE", f"/api/users/{self.id}")
-        js = await self._http.request(r, json=data)
-        return User._from_data(js, http=self._http)
+        data = await self._http.request(r, json=payload)
+        return User._from_data(data, http=self._http)
 
     async def get_files(
         self,
@@ -797,8 +797,8 @@ class User:
             params["searchQuery"] = search_query
 
         r = Route("GET", "/api/user/files")
-        js = await self._http.request(r, params=params)
-        return UserFilesResponse._from_data(js, http=self._http)
+        data = await self._http.request(r, params=params)
+        return UserFilesResponse._from_data(data, http=self._http)
 
 
 @dataclass
@@ -828,7 +828,7 @@ class InviteUser:
     role: UserRole
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> InviteUser:
+    def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> InviteUser:
         return cls(
             http,
             data["username"],
@@ -847,8 +847,8 @@ class InviteUser:
             The fully fledged user object.
         """
         r = Route("GET", f"/api/users/{self.id}")
-        js = await self._http.request(r)
-        return User._from_data(js, http=self._http)
+        data = await self._http.request(r)
+        return User._from_data(data, http=self._http)
 
 
 @dataclass
@@ -903,7 +903,7 @@ class Invite:
     inviter_id: str
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> Invite:
+    def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> Invite:
         return cls(
             http,
             data["id"],
@@ -938,8 +938,8 @@ class Invite:
             A new instance with the latest information about this invite.
         """
         r = Route("DELETE", f"/api/auth/invites/{self.id}")
-        js = await self._http.request(r)
-        return Invite._from_data(js, self._http)
+        data = await self._http.request(r)
+        return Invite._from_data(data, http=self._http)
 
     async def refresh(self) -> Invite:
         """|coro|
@@ -952,8 +952,8 @@ class Invite:
             A new instance with the latest information about this invite.
         """
         r = Route("GET", f"/api/auth/invites/{self.id}")
-        js = await self._http.request(r)
-        return Invite._from_data(js, http=self._http)
+        data = await self._http.request(r)
+        return Invite._from_data(data, http=self._http)
 
 
 class TagFile:
@@ -987,8 +987,8 @@ class TagFile:
             The fully fledged file object.
         """
         r = Route("GET", f"/api/user/files/{self.id}")  # NOTE: Undocumented // Not officially used in the frontend.
-        js = await self._http.request(r)
-        return File._from_data(js, http=self._http)
+        data = await self._http.request(r)
+        return File._from_data(data, http=self._http)
 
 
 @dataclass
@@ -1023,7 +1023,7 @@ class Tag:
     files: Optional[List[TagFile]]
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> Tag:
+    def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> Tag:
         return cls(
             http,
             data["id"],
@@ -1065,8 +1065,8 @@ class Tag:
             payload["name"] = name
 
         r = Route("PATCH", f"/api/user/tags/{self.id}")
-        js = await self._http.request(r, json=payload)
-        return Tag._from_data(js, http=self._http)
+        data = await self._http.request(r, json=payload)
+        return Tag._from_data(data, http=self._http)
 
     async def delete(self) -> Tag:
         """|coro|
@@ -1079,8 +1079,8 @@ class Tag:
             A new instance with the latest information about this tag.
         """
         r = Route("DELETE", f"/api/user/tags/{self.id}")
-        js = await self._http.request(r)
-        return Tag._from_data(js, http=self._http)
+        data = await self._http.request(r)
+        return Tag._from_data(data, http=self._http)
 
     async def refresh(self) -> Tag:
         """|coro|
@@ -1093,8 +1093,8 @@ class Tag:
             A new instance with the latest information about this tag.
         """
         r = Route("GET", f"/api/user/tags/{self.id}")
-        js = await self._http.request(r)
-        return Tag._from_data(js, http=self._http)
+        data = await self._http.request(r)
+        return Tag._from_data(data, http=self._http)
 
 
 @dataclass
@@ -1161,7 +1161,7 @@ class URL:
     user_id: str
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> URL:
+    def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> URL:
         return cls(
             http,
             data["id"],
@@ -1174,7 +1174,7 @@ class URL:
             data.get("maxViews"),
             data.get("password"),
             data["enabled"],
-            User._from_data(data["user"], http) if "user" in data else None,
+            User._from_data(data["user"], http=http) if "user" in data else None,
             data["userId"],
         )
 
@@ -1233,8 +1233,8 @@ class URL:
             payload["password"] = password
 
         r = Route("PATCH", f"/api/user/urls/{self.id}")
-        js = await self._http.request(r, json=payload)
-        return URL._from_data(js, http=self._http)
+        data = await self._http.request(r, json=payload)
+        return URL._from_data(data, http=self._http)
 
     async def delete(self) -> URL:
         """|coro|
@@ -1247,8 +1247,8 @@ class URL:
             A new instance with the latest information about this url.
         """
         r = Route("DELETE", f"/api/user/urls/{self.id}")
-        js = await self._http.request(r)
-        return URL._from_data(js, http=self._http)
+        data = await self._http.request(r)
+        return URL._from_data(data, http=self._http)
 
 
 @dataclass
@@ -1278,7 +1278,7 @@ class UploadFile:
     url: str
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> UploadFile:
+    def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> UploadFile:
         return cls(
             http,
             data["id"],
@@ -1297,8 +1297,8 @@ class UploadFile:
             The fully fledged object
         """
         r = Route("GET", f"/api/user/files/{self.id}")  # NOTE: Undocumented // Not officially used in the frontend.
-        js = await self._http.request(r)
-        return File._from_data(js, self._http)
+        data = await self._http.request(r)
+        return File._from_data(data, http=self._http)
 
 
 @dataclass
@@ -1319,10 +1319,10 @@ class UploadResponse:
     deletes_at: Optional[datetime.datetime]
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> UploadResponse:
+    def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> UploadResponse:
         return cls(
             http,
-            [UploadFile._from_data(uf, http) for uf in data["files"]],
+            [UploadFile._from_data(uf, http=http) for uf in data["files"]],
             parse_iso_timestamp(data["deletesAt"]) if "deletesAt" in data else None,
         )
 
@@ -1502,7 +1502,7 @@ class UserQuota:
     user_id: Optional[str]
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> UserQuota:
+    def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> UserQuota:
         return cls(
             http,
             data["id"],
@@ -1557,8 +1557,8 @@ class UserQuota:
             raise TypeError("cannot resolve user with null id.")
 
         r = Route("GET", f"/api/users/{self.id}")
-        js = await self._http.request(r)
-        return User._from_data(js, http=self._http)
+        data = await self._http.request(r)
+        return User._from_data(data, http=self._http)
 
 
 @dataclass
@@ -1689,7 +1689,7 @@ class Thumbnail:
         self.path = path
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any]) -> Thumbnail:
+    def _from_data(cls, data: Dict[str, Any], /) -> Thumbnail:
         return cls(data["path"])
 
 
@@ -1773,7 +1773,7 @@ class ServerVersionInfo:
     version: str
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any]) -> ServerVersionInfo:
+    def _from_data(cls, data: Dict[str, Any], /) -> ServerVersionInfo:
         return cls(data["version"])
 
 
@@ -1827,7 +1827,7 @@ class UserStats:
     sort_type_count: Dict[str, int]
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any]) -> UserStats:
+    def _from_data(cls, data: Dict[str, Any], /) -> UserStats:
         return cls(
             data["filesUploaded"],
             data["favoriteFiles"],
@@ -1865,9 +1865,9 @@ class UserFilesResponse:
     pages: Optional[int]
 
     @classmethod
-    def _from_data(cls, data: Dict[str, Any], /, http: HTTPClient) -> UserFilesResponse:
+    def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> UserFilesResponse:
         return cls(
-            [File._from_data(d, http) for d in data["page"]],
+            [File._from_data(d, http=http) for d in data["page"]],
             data.get("search"),
             data.get("total"),
             data.get("pages"),

@@ -131,7 +131,7 @@ class Client:
             The password of the user to create.
         role: :class:`~zipline.enums.UserRole`
             The permissions level of the created User. Only available if used by a Super Admin.
-        avatar: Optional[:class:`zipline.models.Avatar`]
+        avatar: Optional[:class:`~zipline.models.Avatar`]
             If given, a tuple containing a string denoting the MIME type of the data being uploaded and the data itself as bytes.
 
             .. admonition:: Example

@@ -769,6 +769,7 @@ class Client:
             .. versionchanged:: 0.21.0
 
                 This is now controlled by an enum.
+
         Returns
         -------
         List[:class:`~zipline.models.File`]

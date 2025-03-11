@@ -6,7 +6,7 @@ import zipline
 
 # Sort all files into folders based on their MIME type.
 async def main():
-    async with zipline.Client("your_zipline_site.com", "your_zipline_token") as client:
+    async with zipline.Client("https://zipline.example.com", "your_zipline_token") as client:
 
         def file_mimetype(file: zipline.File) -> str:
             return file.type

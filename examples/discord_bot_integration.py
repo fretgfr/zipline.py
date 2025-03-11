@@ -29,7 +29,7 @@ async def main():
 
     # 3.9+ syntax
     async with (
-        zipline.Client("your_zipline_site.com", "your_zipline_token") as zipline_client,
+        zipline.Client("https://zipline.example.com", "your_zipline_token") as zipline_client,
         MyBot("?", zipline_client=zipline_client, intents=intents) as bot,
     ):
         await bot.start("YOUR DISCORD TOKEN")

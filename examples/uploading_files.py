@@ -5,7 +5,7 @@ import zipline
 
 
 async def main():
-    async with zipline.Client("your_zipline_site.com", "your_zipline_token") as client:
+    async with zipline.Client("https://zipline.example.com", "your_zipline_token") as client:
         # Create an object that will be uploaded to zipline
         # If a path to a file is given, the filename will be automatically populated
         # otherwise you will need to provide either a filename or a MIME type for

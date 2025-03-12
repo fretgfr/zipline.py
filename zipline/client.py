@@ -166,7 +166,7 @@ class Client:
         json = {"username": username, "password": password, "role": role.value}
 
         if avatar:
-            json["avatar"] = avatar._to_payload_str()
+            json["avatar"] = avatar.to_payload_str()
 
         r = Route("POST", "/api/users")
         data = await self.http.request(r, json=json)

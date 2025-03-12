@@ -73,6 +73,12 @@ class File:
     """
     Represents a file stored on Zipline.
 
+    .. container:: operations
+
+        .. describe:: str(x)
+
+            Returns the full url of the file.
+
     Attributes
     ----------
     id: :class:`str`
@@ -146,6 +152,9 @@ class File:
     thumbnail: Optional[Thumbnail]
     tags: Optional[List[Tag]]
     url: Optional[str]
+
+    def __str__(self) -> str:
+        return self.full_url
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> File:
@@ -390,6 +399,12 @@ class Folder:
     """
     Represents a Folder on Zipline.
 
+    .. container:: operations
+
+        .. describe:: str(x)
+
+            Returns the full url of the folder.
+
     Attributes
     ----------
     id: :class:`str`
@@ -422,6 +437,9 @@ class Folder:
     user: Optional[User]
     user_id: str
 
+    def __str__(self) -> str:
+        return self.full_url
+
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> Folder:
         return cls(
@@ -435,6 +453,11 @@ class Folder:
             User._from_data(data["user"], http=http) if "user" in data else None,
             data["userId"],
         )
+
+    @property
+    def full_url(self) -> str:
+        """A :class:`str` with the URL of the folder."""
+        return f"{self._http.base_url}/folder/{self.id}"
 
     async def refresh(self) -> Folder:
         """|coro|
@@ -562,6 +585,12 @@ class User:
     """
     Represents a Zipline user.
 
+    .. container:: operations
+
+        .. describe:: str(x)
+
+            Returns the username of this user.
+
     Attributes
     ----------
     id: :class:`str`
@@ -627,6 +656,9 @@ class User:
     avatar: Optional[Avatar]
     password: Optional[str]
     token: Optional[str]
+
+    def __str__(self) -> str:
+        return self.username
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> User:
@@ -700,7 +732,7 @@ class User:
         if password:
             payload["password"] = password
         if avatar:
-            payload["avatar"] = avatar._to_payload_str()
+            payload["avatar"] = avatar.to_payload_str()
         if role:
             payload["role"] = role.value
         if quota:
@@ -808,7 +840,13 @@ class InviteUser:
 
     .. note::
 
-        This can be resolved to a :class:`~zipline.models.User` via :meth:`~zipline.models.InviteUser.resolve`.
+        This can be resolved to a :class:`~zipline.models.User` via :meth:`resolve`.
+
+    .. container:: operations
+
+        .. describe:: str(x)
+
+            Returns the full url of the file.
 
     Attributes
     ----------
@@ -826,6 +864,9 @@ class InviteUser:
     username: str
     id: str
     role: UserRole
+
+    def __str__(self) -> str:
+        return self.username
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> InviteUser:
@@ -855,6 +896,12 @@ class InviteUser:
 class Invite:
     """
     Represents an invite to a Zipline instance.
+
+    .. container:: operations
+
+        .. describe:: str(x)
+
+            Returns the url of the invite.
 
     Attributes
     ----------
@@ -901,6 +948,9 @@ class Invite:
     max_uses: Optional[int]
     inviter: InviteUser
     inviter_id: str
+
+    def __str__(self) -> str:
+        return self.url
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> Invite:
@@ -962,7 +1012,7 @@ class TagFile:
 
     .. note::
 
-        This can be resolved to a :class:`~zipline.models.File` via :meth:`~zipline.models.TagFile.resolve`.
+        This can be resolved to a :class:`~zipline.models.File` via :meth:`resolve`.
 
     Attributes
     ----------
@@ -996,6 +1046,12 @@ class Tag:
     """
     Represents a tag on Zipline.
 
+    .. container:: operations
+
+        .. describe:: str(x)
+
+            Returns the name of this tag.
+
     Attributes
     ----------
     id: :class:`str`
@@ -1021,6 +1077,9 @@ class Tag:
     name: str
     color: str
     files: Optional[List[TagFile]]
+
+    def __str__(self) -> str:
+        return self.name
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> Tag:
@@ -1102,6 +1161,12 @@ class URL:
     """
     Represents a shortened url on Zipline.
 
+    .. container:: operations
+
+        .. describe:: str(x)
+
+            Returns the link to use the URL.
+
     Attributes
     ----------
     id: :class:`str`
@@ -1159,6 +1224,9 @@ class URL:
     enabled: bool
     user: Optional[User]
     user_id: str
+
+    def __str__(self) -> str:
+        return self.full_url
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> URL:
@@ -1258,7 +1326,14 @@ class UploadFile:
 
     .. note::
 
-        This may be resolved to a full :class:`~zipline.models.File` via :meth:`~zipline.models.UploadFile.resolve`.
+        This may be resolved to a full :class:`~zipline.models.File` via :meth:`resolve`.
+
+    .. container:: operations
+
+        .. describe:: str(x)
+
+            Returns the full url of the uploaded file.
+
 
     Attributes
     ----------
@@ -1276,6 +1351,9 @@ class UploadFile:
     id: str
     type: str
     url: str
+
+    def __str__(self) -> str:
+        return self.url
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> UploadFile:
@@ -1883,6 +1961,12 @@ class Avatar:
     """
     Wraps the representation of avatars in Zipline.
 
+    .. container:: operations
+
+        .. describe:: str(x)
+
+            Returns the encoded data for this Avatar.
+
     Attributes
     ----------
     data: :class:`bytes`
@@ -1900,8 +1984,19 @@ class Avatar:
         if not self.mime:
             raise ZiplineError("could not determine mimetype of avatar and one was not provided.")
 
+    def __str__(self) -> str:
+        return self.to_payload_str()
+
     @classmethod
     def from_coded_string(cls, coded_str: str) -> Avatar:
+        """
+        Transforms a coded string.
+
+        Parameters
+        ----------
+        coded_str: :class:`str`
+            The string to transform
+        """
         mime_part, data = coded_str.split(";")
 
         mime_part = mime_part[5:]
@@ -1909,7 +2004,7 @@ class Avatar:
 
         return cls(data, mime_part)
 
-    def _to_payload_str(self) -> str:
+    def to_payload_str(self) -> str:
         """
         Returns the base64 encoded string for use in Zipline requests.
 
@@ -1917,6 +2012,11 @@ class Avatar:
         -------
         :class:`str`
             The string for use in requests.
+
+        Raises
+        ------
+        ZiplineError
+            MIME type is None.
         """
         if self.mime is None:
             raise ZiplineError("mimetype undefined in Avatar, cannot export to payload string.")

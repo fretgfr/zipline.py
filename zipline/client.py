@@ -795,14 +795,14 @@ class Client:
         *,
         format: NameFormat = ...,
         compression_percent: int = ...,
-        expiry: Optional[Union[datetime.datetime, datetime.timedelta]] = None,
+        expiry: Optional[Union[datetime.datetime, datetime.timedelta]] = ...,
         password: Optional[str] = ...,
         max_views: Optional[int] = ...,
         override_name: Optional[str] = ...,
         original_name: Optional[str] = ...,
         folder: Optional[Union[Folder, str]] = ...,
         override_extension: Optional[str] = ...,
-        override_domain: Optional[str] = None,
+        override_domain: Optional[Union[str, List[str]]] = ...,
         text_only: Literal[False] = ...,
     ) -> UploadResponse: ...
 
@@ -813,14 +813,14 @@ class Client:
         *,
         format: NameFormat = ...,
         compression_percent: int = ...,
-        expiry: Optional[Union[datetime.datetime, datetime.timedelta]] = None,
+        expiry: Optional[Union[datetime.datetime, datetime.timedelta]] = ...,
         password: Optional[str] = ...,
         max_views: Optional[int] = ...,
         override_name: Optional[str] = ...,
         original_name: Optional[str] = ...,
         folder: Optional[Union[Folder, str]] = ...,
         override_extension: Optional[str] = ...,
-        override_domain: Optional[str] = None,
+        override_domain: Optional[Union[str, List[str]]] = ...,
         text_only: Literal[True],
     ) -> str: ...
 
@@ -837,7 +837,7 @@ class Client:
         original_name: Optional[str] = None,
         folder: Optional[Union[Folder, str]] = None,
         override_extension: Optional[str] = None,
-        override_domain: Optional[str] = None,
+        override_domain: Optional[Union[str, List[str]]] = None,
         text_only: bool = False,
     ) -> Union[UploadResponse, str]:
         """|coro|
@@ -874,10 +874,14 @@ class Client:
             The extension to use for this file instead of the original.
 
             .. versionadded:: 0.21.0
-        override_domain: Optional[:class:`str`]
+        override_domain: Optional[Union[:class:`str`, List[:class:`str`]]]
             The domain to return a url for. Must still be connected to the Zipline instance or it will not work.
 
             .. versionadded:: 0.25.0
+
+            .. versionchanged:: 0.27.0
+
+                It is now possible to pass a list of domains to select one at random from the list given.
         text_only: :class:`bool`
             If True this method returns a simple string containing the url of the uploaded file, by default False.
 
@@ -890,7 +894,7 @@ class Client:
 
             .. versionchanged:: 0.25.0
 
-                This now returns a string if text_only is True.
+                This now returns a :class:`str` if text_only is True.
 
         Raises
         ------
@@ -932,7 +936,7 @@ class Client:
         if folder:
             headers["X-Zipline-Folder"] = folder.id if isinstance(folder, Folder) else folder
         if override_domain:
-            headers["X-Zipline-Domain"] = override_domain
+            headers["X-Zipline-Domain"] = ",".join(override_domain) if isinstance(override_domain, list) else override_domain
         if text_only:
             headers["X-Zipline-No-Json"] = "true"
 

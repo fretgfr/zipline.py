@@ -799,7 +799,7 @@ class Client:
         password: Optional[str] = ...,
         max_views: Optional[int] = ...,
         override_name: Optional[str] = ...,
-        original_name: Optional[str] = ...,
+        original_name: Optional[bool] = ...,
         folder: Optional[Union[Folder, str]] = ...,
         override_extension: Optional[str] = ...,
         override_domain: Optional[Union[str, List[str]]] = ...,
@@ -817,7 +817,7 @@ class Client:
         password: Optional[str] = ...,
         max_views: Optional[int] = ...,
         override_name: Optional[str] = ...,
-        original_name: Optional[str] = ...,
+        original_name: Optional[bool] = ...,
         folder: Optional[Union[Folder, str]] = ...,
         override_extension: Optional[str] = ...,
         override_domain: Optional[Union[str, List[str]]] = ...,
@@ -834,7 +834,7 @@ class Client:
         password: Optional[str] = None,
         max_views: Optional[int] = None,
         override_name: Optional[str] = None,
-        original_name: Optional[str] = None,
+        original_name: Optional[bool] = None,
         folder: Optional[Union[Folder, str]] = None,
         override_extension: Optional[str] = None,
         override_domain: Optional[Union[str, List[str]]] = None,
@@ -864,8 +864,8 @@ class Client:
             The number of times the uploaded file can be viewed before it is deleted, by default None.
         override_name: Optional[:class:`str`]
             A name to give the uploaded file. If provided this will override the server generated name, by default None.
-        original_name: Optional[:class:`str`]
-            The original_name of the file. None to not preserve this data, by default None.
+        original_name: Optional[:class:`bool`]
+            Whether to preserve the original name of the file when downloaded.
         folder: Optional[Union[:class:`~zipline.models.Folder`, :class:`str`]]
             The folder (or it's ID) to place this upload into automatically upon completion.
 
@@ -930,7 +930,7 @@ class Client:
         if override_name:
             headers["X-Zipline-Filename"] = override_name
         if original_name:
-            headers["X-Zipline-Original-Name"] = original_name
+            headers["X-Zipline-Original-Name"] = "true" if original_name else "false"
         if override_extension:
             headers["X-Zipline-File-Extension"] = override_extension
         if folder:

@@ -34,7 +34,7 @@ __all__ = (
 )
 
 
-class NameFormat(Enum):
+class NameFormat(str, Enum):
     """Format for the name of uploaded files."""
 
     original_name = "name"
@@ -44,7 +44,7 @@ class NameFormat(Enum):
     gfycat = "gfycat"
 
 
-class UserRole(Enum):
+class UserRole(str, Enum):
     """The role of a Zipline user."""
 
     user = "USER"
@@ -52,7 +52,7 @@ class UserRole(Enum):
     super_admin = "SUPERADMIN"
 
 
-class RecentFilesFilter(Enum):
+class RecentFilesFilter(str, Enum):
     """Filters that apply to recent files requests."""
 
     all = "all"
@@ -60,7 +60,7 @@ class RecentFilesFilter(Enum):
     dashboard = "dashboard"
 
 
-class QuotaType(Enum):
+class QuotaType(str, Enum):
     """The different types of quotas that can be applied to a user."""
 
     by_bytes = "BY_BYTES"
@@ -68,7 +68,7 @@ class QuotaType(Enum):
     none = "NONE"
 
 
-class OAuthProviderType(Enum):
+class OAuthProviderType(str, Enum):
     """Supported types of OAuth providers."""
 
     discord = "DISCORD"
@@ -77,14 +77,14 @@ class OAuthProviderType(Enum):
     oidc = "OIDC"
 
 
-class Order(Enum):
+class Order(str, Enum):
     """Ordering of returned results."""
 
     asc = "asc"
     desc = "desc"
 
 
-class FileSearchField(Enum):
+class FileSearchField(str, Enum):
     """Fields that can be searched by."""
 
     original_name = "originalName"
@@ -94,7 +94,7 @@ class FileSearchField(Enum):
     file_name = "name"
 
 
-class FileSearchSort(Enum):
+class FileSearchSort(str, Enum):
     """Fields that files can be ordered by."""
 
     id = "id"

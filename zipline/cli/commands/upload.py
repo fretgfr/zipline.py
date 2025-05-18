@@ -3,18 +3,19 @@ from typing import Annotated, Optional
 
 from aiohttp import NonHttpUrlClientError
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from typer import Argument, Exit, FileBinaryRead, Option
+from syncer import sync
+from typer import Argument, Exit, FileBinaryRead, Option, Typer
 
-from zipline.cli.asynctyper import AsyncTyper
 from zipline.client import Client
 from zipline.enums import NameFormat
 from zipline.errors import BadRequest, Forbidden, NotAuthenticated
 from zipline.models import FileData, UploadResponse
 
-app = AsyncTyper()
+app = Typer()
 
 
 @app.command(name="upload")
+@sync
 async def upload(
     file: Annotated[
         FileBinaryRead,

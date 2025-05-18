@@ -2,16 +2,17 @@ from typing import Annotated, Optional
 
 from aiohttp import NonHttpUrlClientError
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from typer import Argument, Exit, Option
+from syncer import sync
+from typer import Argument, Exit, Option, Typer
 
-from zipline.cli.asynctyper import AsyncTyper
 from zipline.client import Client
 from zipline.errors import Forbidden, NotAuthenticated
 
-app = AsyncTyper()
+app = Typer()
 
 
 @app.command(name="shorten")
+@sync
 async def shorten(
     original_url: Annotated[
         str,

@@ -1,7 +1,8 @@
-from zipline import meta
-from zipline.cli.asynctyper import AsyncTyper
+from typer import Typer
 
-app = AsyncTyper()
+from zipline import meta
+
+app = Typer()
 
 
 @app.command(name="version")

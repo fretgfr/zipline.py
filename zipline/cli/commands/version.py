@@ -33,8 +33,6 @@ def show_versions() -> None:
         "rich": _get_package_version("rich"),
     }
 
-    output = "\n".join(
-        f"{name}: {ver if ver else 'Not available'}" for name, ver in versions.items()
-    )
+    output = "\n".join(f"{name}: {ver if ver else 'Not available'}" for name, ver in versions.items())
 
     typer.echo(output)

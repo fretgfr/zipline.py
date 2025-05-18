@@ -6,7 +6,7 @@ from syncer import sync
 from typer import Argument, Exit, Option, Typer
 
 from zipline.client import Client
-from zipline.errors import Forbidden, NotAuthenticated
+from zipline.errors import BadRequest, Forbidden, NotAuthenticated
 
 app = Typer()
 
@@ -94,10 +94,10 @@ async def shorten(
             print("Authentication failure! Are you using a valid token?")
             await client.close()
             raise Exit(77) from e
-        # except BadRequest as e:
-        #     print("Bad request!")
-        #     await client.close()
-        #     raise Exit(1) from e
+        except BadRequest as e:
+            print("Bad request!")
+            await client.close()
+            raise Exit(1) from e
 
         await client.close()
 

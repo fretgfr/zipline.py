@@ -27,7 +27,7 @@ async def upload(
             "--server",
             "-s",
             help="Specify the URL to your Zipline instance.",
-            envvar="ZIPLINE_INSTANCE",
+            envvar="ZIPLINE_SERVER",
             prompt=True,
         ),
     ],

@@ -20,12 +20,12 @@ async def upload(
         FileBinaryRead,
         Argument(help="The path to the file you wish to upload."),
     ],
-    instance: Annotated[
+    server_url: Annotated[
         str,
         Option(
-            "--instance",
-            "-i",
-            help="Specify the URL of your Zipline instance.",
+            "--server",
+            "-s",
+            help="Specify the URL to your Zipline instance.",
             envvar="ZIPLINE_INSTANCE",
             prompt=True,
         ),
@@ -127,7 +127,7 @@ async def upload(
         transient=True,
     ) as progress:
         task = progress.add_task(description="Preparing client...", total=None)
-        client = Client(instance, token)
+        client = Client(server_url, token)
 
         progress.update(task, description="Reading file...", total=None)
         file_data = FileData(
@@ -152,7 +152,7 @@ async def upload(
                 text_only=True,
             )
         except NonHttpUrlClientError as e:
-            print(f"Invalid URL provided: '{instance}'")
+            print(f"Invalid URL provided: '{server_url}'")
             await client.close()
             raise Exit(1) from e
         except (NotAuthenticated, Forbidden) as e:

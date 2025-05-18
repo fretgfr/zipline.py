@@ -17,12 +17,12 @@ async def shorten(
         str,
         Argument(help="The url you wish to shorten."),
     ],
-    instance: Annotated[
+    server_url: Annotated[
         str,
         Option(
-            "--instance",
-            "-i",
-            help="Specify the URL of your Zipline instance.",
+            "--server",
+            "-s",
+            help="Specify the URL to your Zipline instance.",
             envvar="ZIPLINE_INSTANCE",
             prompt=True,
         ),
@@ -74,7 +74,7 @@ async def shorten(
         transient=True,
     ) as progress:
         task = progress.add_task(description="Preparing client...", total=None)
-        client = Client(instance, token)
+        client = Client(server_url, token)
 
         progress.update(task, description="Creating shortened url...", total=None)
         try:
@@ -86,7 +86,7 @@ async def shorten(
                 enabled=enabled,
             )
         except NonHttpUrlClientError as e:
-            print(f"Invalid URL provided: '{instance}'")
+            print(f"Invalid URL provided: '{server_url}'")
             await client.close()
             raise Exit(1) from e
         except (NotAuthenticated, Forbidden) as e:

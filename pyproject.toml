@@ -32,7 +32,7 @@ Issues = "https://github.com/fretgfr/zipline.py/issues"
 ziplinepy = "zipline.cli.entrypoint:app"
 
 [tool.setuptools]
-packages = ["zipline"]
+packages = ["zipline", "zipline.cli", "zipline.cli.commands"]
 
 [tool.setuptools.dynamic]
 version = { attr = "zipline.meta.__version__" }

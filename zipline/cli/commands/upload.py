@@ -25,7 +25,7 @@ async def upload(
         Option(
             "--instance",
             "-i",
-            help="Specify the URL of the Zipline instance you're uploading to.",
+            help="Specify the URL of your Zipline instance.",
             envvar="ZIPLINE_INSTANCE",
             prompt=True,
         ),
@@ -100,8 +100,6 @@ async def upload(
     folder: Annotated[
         Optional[str],
         Option(
-            "--folder",
-            "-f",
             help="Specify what folder the file should be added to after it is uploaded.",
         ),
     ] = None,

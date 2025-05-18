@@ -43,13 +43,13 @@ async def upload(
         ),
     ],
     format: Annotated[
-        NameFormat,
+        Optional[NameFormat],
         Option(
             "--format",
             "-f",
             help="Specify what format Zipline should use to generate a link for this file.",
         ),
-    ] = NameFormat.uuid,
+    ] = None,
     compression_percent: Annotated[
         int,
         Option(

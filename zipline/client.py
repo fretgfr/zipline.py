@@ -793,7 +793,7 @@ class Client:
         self,
         payload: FileData,
         *,
-        format: NameFormat = ...,
+        format: Optional[NameFormat] = ...,
         compression_percent: int = ...,
         expiry: Optional[Union[datetime.datetime, datetime.timedelta]] = ...,
         password: Optional[str] = ...,
@@ -811,7 +811,7 @@ class Client:
         self,
         payload: FileData,
         *,
-        format: NameFormat = ...,
+        format: Optional[NameFormat] = ...,
         compression_percent: int = ...,
         expiry: Optional[Union[datetime.datetime, datetime.timedelta]] = ...,
         password: Optional[str] = ...,
@@ -828,7 +828,7 @@ class Client:
         self,
         payload: FileData,
         *,
-        format: NameFormat = NameFormat.uuid,
+        format: Optional[NameFormat] = None,
         compression_percent: int = 0,
         expiry: Optional[Union[datetime.datetime, datetime.timedelta]] = None,
         password: Optional[str] = None,
@@ -849,7 +849,7 @@ class Client:
         payload: :class:`~zipline.models.FileData`
             Data regarding the file to upload.
         format: Optional[:class:`~zipline.enums.NameFormat`]
-            The format of the name to assign to the uploaded file, by default :attr:`~zipline.enums.NameFormat.uuid`.
+            The format of the name to assign to the uploaded file, uses Zipline's configured name formatting by default.
         compression_percent: Optional[:class:`int`]
             How compressed should the uploaded file be, by default 0.
         expiry: Optional[Union[:class:`datetime.datetime`, :class:`datetime.timedelta`]]
@@ -916,10 +916,11 @@ class Client:
             raise ValueError("max_views must be greater than 0")
 
         headers = {
-            "X-Zipline-Format": format.value,
             "X-Zipline-Image-Compression-Percent": str(compression_percent),
         }
 
+        if format:
+            headers["X-Zipline-Format"] = format.value
         if expiry:
             exp = dt_from_delta_or_dt(expiry)
             headers["X-Zipline-Deletes-At"] = f"date={to_iso_format(exp)}"

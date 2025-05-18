@@ -14,6 +14,27 @@ from zipline.models import FileData, UploadResponse
 app = Typer()
 
 
+_formats: dict[NameFormat, str] = {
+    NameFormat.date: "Use the current date and time to name the uploaded file. Example: `2024-03-19_11:23:51.png`",
+    NameFormat.gfycat: "Use a randomly-generated string of words to name the uploaded file. Example: `aching-secondary-aardvark.png`",
+    NameFormat.original_name: "Use the original filename of the file to name the uploaded file.",
+    NameFormat.random: "Use a shorter, randomly-generated string of characters to name the uploaded file. Example: `ysz5kj.png`",
+    NameFormat.uuid: "Use a UUID, a long, randomly-generated string of characters to name the uploaded file. Example: `4cfz9aee-4c6a-4230-8p50-d2b92mzac1ce.png`",
+}
+
+
+def _complete_format(incomplete: str) -> list[tuple[str, str] | str]:
+    """Completion for the upload command's `--format` argument."""
+    completion: list[tuple[str, str] | str] = []
+    for format in NameFormat:
+        if format.value.startswith(incomplete):
+            if format in _formats.keys():
+                completion.append((format, _formats[format]))
+            else:
+                completion.append(format)
+    return completion
+
+
 @app.command(name="upload")
 @sync
 async def upload(
@@ -48,6 +69,7 @@ async def upload(
             "--format",
             "-f",
             help="Specify what format Zipline should use to generate a link for this file.",
+            autocompletion=_complete_format,
         ),
     ] = None,
     compression_percent: Annotated[

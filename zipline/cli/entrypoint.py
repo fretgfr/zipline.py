@@ -1,4 +1,9 @@
-from typer import Typer
+try:
+    from typer import Typer
+except ImportError as e:
+    raise ImportError(
+        "Missing required dependencies! Did you install zipline.py with the `cli` extra?"
+    ) from e
 
 from zipline import meta
 from zipline.cli.commands import commands

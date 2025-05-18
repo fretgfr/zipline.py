@@ -14,17 +14,14 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 keywords = ["zipline", "api wrapper"]
-dependencies = [
-    "aiohttp>=3.7.4,<4",
-    "syncer>=2.0.3",
-    "typer>=0.15.4",
-]
+dependencies = ["aiohttp>=3.7.4,<4"]
 requires-python = ">=3.8"
 dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = ["black", "isort", "typing_extensions"]
 docs = ["sphinx", "sphinx-rtd-theme"]
+cli = ["syncer>=2.0.3", "typer>=0.15.4"]
 
 [project.urls]
 Homepage = "https://github.com/fretgfr/zipline.py/"

@@ -3,7 +3,7 @@ from typing import Annotated, Optional
 from aiohttp import NonHttpUrlClientError
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from syncer import sync
-from typer import Argument, Exit, Option, Typer
+from typer import Argument, Exit, Option, Typer, echo
 
 from zipline.client import Client
 from zipline.errors import BadRequest, Forbidden, NotAuthenticated
@@ -87,18 +87,18 @@ async def shorten(
                 enabled=enabled,
             )
         except NonHttpUrlClientError as e:
-            print(f"Invalid URL provided: '{server_url}'")
+            echo(f"Invalid URL provided: '{server_url}'", err=True)
             await client.close()
             raise Exit(1) from e
         except (NotAuthenticated, Forbidden) as e:
-            print("Authentication failure! Are you using a valid token?")
+            echo("Authentication failure! Are you using a valid token?", err=True)
             await client.close()
             raise Exit(77) from e
         except BadRequest as e:
-            print("Bad request!")
+            echo("Bad request!", err=True)
             await client.close()
             raise Exit(1) from e
 
         await client.close()
 
-    print(shortened_url)
+    echo(shortened_url)

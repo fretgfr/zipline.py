@@ -4,7 +4,7 @@ from typing import Annotated, Optional
 from aiohttp import NonHttpUrlClientError
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from syncer import sync
-from typer import Argument, Exit, FileBinaryRead, Option, Typer
+from typer import Argument, Exit, FileBinaryRead, Option, Typer, echo
 
 from zipline.client import Client
 from zipline.enums import NameFormat
@@ -175,21 +175,21 @@ async def upload(
                 text_only=True,
             )
         except NonHttpUrlClientError as e:
-            print(f"Invalid URL provided: '{server_url}'")
+            echo(f"Invalid URL provided: '{server_url}'", err=True)
             await client.close()
             raise Exit(1) from e
         except (NotAuthenticated, Forbidden) as e:
-            print("Authentication failure! Are you using a valid token?")
+            echo("Authentication failure! Are you using a valid token?", err=True)
             await client.close()
             raise Exit(77) from e
         except BadRequest as e:
-            print("Bad request!")
+            echo("Bad request!", err=True)
             await client.close()
             raise Exit(1) from e
 
         await client.close()
 
     if isinstance(uploaded_file, UploadResponse):
-        print(uploaded_file.files[0])
+        echo(uploaded_file.files[0])
     else:
-        print(uploaded_file)
+        echo(uploaded_file)

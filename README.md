@@ -51,11 +51,17 @@ ziplinepy --install-completion # attempts to install the completion script into 
 ### Uploading a file
 
 ```bash
-ziplinepy upload --server "https://example.zipline.instance" --token "$(cat /file/containing/zipline/token)" file.png
+ziplinepy upload \
+    --server "https://example.zipline.instance" \
+    --token "$(cat /file/containing/zipline/token)" \
+    file.png
 ```
 
 ### Shortening a URL
 
 ```bash
-ziplinepy shorten --server "https://example.zipline.instance" --token "$(cat /file/containing/zipline/token)" "https://github.com/fretgfr/zipline.py"
+ziplinepy shorten \
+    --server "https://example.zipline.instance" \
+    --token "$(cat /file/containing/zipline/token)" \
+    "https://github.com/fretgfr/zipline.py"
 ```

@@ -68,7 +68,7 @@ async def shorten(
         ),
     ] = True,
 ) -> None:
-    """Upload a file to a remote Zipline instance."""
+    """Shorten a url using a remote Zipline instance."""
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),

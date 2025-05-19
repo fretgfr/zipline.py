@@ -21,7 +21,7 @@ dynamic = ["version"]
 [project.optional-dependencies]
 dev = ["black", "isort", "typing_extensions"]
 docs = ["sphinx", "sphinx-rtd-theme"]
-cli = ["syncer>=2.0.3", "typer>=0.15.4"]
+cli = ["typer>=0.15.4"]
 
 [project.urls]
 Homepage = "https://github.com/fretgfr/zipline.py/"

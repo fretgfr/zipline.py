@@ -2,9 +2,9 @@ from typing import Annotated, Optional
 
 from aiohttp import NonHttpUrlClientError
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from syncer import sync
 from typer import Argument, Exit, Option, Typer, echo
 
+from zipline.cli.sync import sync
 from zipline.client import Client
 from zipline.errors import BadRequest, Forbidden, NotAuthenticated
 

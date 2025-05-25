@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Union
 
+from rich import print
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from typer import Argument, FileBinaryRead, Option, Typer, echo
+from typer import Argument, FileBinaryRead, Option, Typer
 
 from zipline.cli.commands._handling import handle_api_errors
 from zipline.cli.sync import sync
@@ -147,4 +148,4 @@ async def upload(
             except Exception as error:
                 handle_api_errors(error, server_url)
 
-        echo(uploaded_file)
+        print(uploaded_file)

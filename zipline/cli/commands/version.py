@@ -1,38 +1,36 @@
-from importlib.metadata import version as get_version
-from typing import Optional
+from importlib.metadata import version
+from typing import Dict, Optional
 
-import aiohttp
-import click
-import typer
+from rich import print
+from typer import Typer
 
 from zipline import meta
 
-app = typer.Typer()
+app = Typer()
 
 
 def _get_package_version(package_name: str) -> Optional[str]:
     """Safely get package version with error handling."""
     try:
-        return get_version(package_name)
+        return version(package_name)
     except ImportError:
         return None
 
 
 @app.command(name="version")
 def show_versions() -> None:
-    """
-    Display versions of key dependencies.
-
-    Shows versions of the zipline.py, aiohttp, typer, click, and rich packages.
-    """
-    versions = {
+    """Shows versions of the zipline.py, aiohttp, typer, click, and rich packages."""
+    versions: Dict[str, Optional[str]] = {
         meta.__title__: meta.__version__,
-        "aiohttp": aiohttp.__version__,
-        "typer": typer.__version__,
-        "click": click.__version__,
+        "aiohttp": _get_package_version("aiohttp"),
+        "typer": _get_package_version("typer"),
+        "click": _get_package_version("click"),
         "rich": _get_package_version("rich"),
     }
 
-    output = "\n".join(f"{name}: {ver if ver else 'Not available'}" for name, ver in versions.items())
+    output = "\n".join(
+        f"[blue]{name}:[/blue] {f'[bright_cyan]{version}[/bright_cyan]' if version else '[bold red]Not available[/bold red]'}"
+        for name, version in versions.items()
+    )
 
-    typer.echo(output)
+    print(output)

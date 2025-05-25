@@ -850,6 +850,10 @@ class Client:
             Data regarding the file to upload.
         format: Optional[:class:`~zipline.enums.NameFormat`]
             The format of the name to assign to the uploaded file, uses Zipline's configured name formatting by default.
+
+            .. versionchanged:: 0.27.0
+
+                This parameter's default is now ``None``. Previously, it was :attr:`~zipline.enums.NameFormat.uuid`.
         compression_percent: Optional[:class:`int`]
             How compressed should the uploaded file be, by default 0.
         expiry: Optional[Union[:class:`datetime.datetime`, :class:`datetime.timedelta`]]

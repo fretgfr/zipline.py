@@ -5,7 +5,11 @@ The CLI requires some extra dependencies to function. Make sure to install zipli
 
 .. code-block:: bash
 
-   pip install "zipline.py[cli]"
+   # Windows
+   py -m pip install "zipline.py[cli]"
+
+   # Other platforms
+   python3 -m pip install "zipline.py[cli]"
 
 The CLI is fully documented. Use the following command to list all subcommands.
 
@@ -19,6 +23,16 @@ The CLI also supports autocompletion for select shells. Use the following comman
 
    ziplinepy --show-completion # prints the completion script
    ziplinepy --install-completion # attempts to install the completion script into your current shell
+
+The following environment variables are detected by the CLI, and will be used when set:
+
+- ``ZIPLINE_SERVER`` (string)
+   - The URL of your chosen Zipline instance.
+- ``ZIPLINE_TOKEN`` (string)
+   - An authentication token to use for API requests.
+- ``ZIPLINE_VERBOSE`` (boolean)
+   - Determines whether or not to print exception tracebacks when the application encounters an exception that it is meant to handle.
+   - If the application encounters an unexpected exception, this option is ignored and the traceback will always be printed.
 
 Example Usage
 -------------

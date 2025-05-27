@@ -57,7 +57,7 @@ async def upload(
         hide_input=True,
     ),
     format: Optional[NameFormat] = Option(
-        ...,
+        None,
         "--format",
         "-f",
         help="Specify what format Zipline should use to generate a link for this file.",
@@ -115,6 +115,13 @@ async def upload(
         "-d",
         help="Specify what domain should be used instead of the Zipline instance's core domain.",
     ),
+    verbose: bool = Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Specify whether or not the application should print tracebacks from exceptions to the console. If the application encounters an exception it doesn't expect, it will always be printed to the console regardless of this option.",
+        envvar="ZIPLINE_VERBOSE",
+    ),
 ) -> None:
     """Upload a file to a remote Zipline instance."""
     with Progress(
@@ -145,7 +152,7 @@ async def upload(
                     override_domain=override_domain,
                     text_only=True,
                 )
-            except Exception as error:
-                handle_api_errors(error, server_url)
+            except Exception as exception:
+                handle_api_errors(exception, server_url, traceback=verbose)
 
         print(uploaded_file)

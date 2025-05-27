@@ -51,6 +51,13 @@ async def shorten(
         "-e/-d",
         help="Specify whether the url should be immediately usable. If the url is disabled, you will need to use the Zipline website to enable it manually.",
     ),
+    verbose: bool = Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Specify whether or not the application should print tracebacks from exceptions to the console. If the application encounters an exception it doesn't expect, it will always be printed to the console regardless of this option.",
+        envvar="ZIPLINE_VERBOSE",
+    ),
 ) -> None:
     """Shorten a url using a remote Zipline instance."""
     with Progress(
@@ -68,7 +75,7 @@ async def shorten(
                     password=password,
                     enabled=enabled,
                 )
-            except Exception as error:
-                handle_api_errors(error, server_url)
+            except Exception as exception:
+                handle_api_errors(exception, server_url, traceback=verbose)
 
     print(str(shortened_url))

@@ -1,4 +1,4 @@
-An asynchronous wrapper for the [Zipline](https://zipline.diced.sh/) v4 API.
+An asynchronous wrapper and optional CLI for the [Zipline](https://zipline.diced.sh/) v4 API.
 
 # Quickstart
 

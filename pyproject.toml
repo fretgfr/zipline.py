@@ -12,6 +12,11 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
+    "Framework :: AsyncIO",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
+    "Development Status :: 4 - Beta",
 ]
 keywords = ["zipline", "api wrapper"]
 dependencies = ["aiohttp>=3.7.4,<4"]

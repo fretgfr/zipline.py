@@ -21,14 +21,18 @@ dynamic = ["version"]
 [project.optional-dependencies]
 dev = ["black", "isort", "typing_extensions"]
 docs = ["sphinx", "sphinx-rtd-theme"]
+cli = ["typer>=0.15.4"]
 
 [project.urls]
 Homepage = "https://github.com/fretgfr/zipline.py/"
 Documentation = "https://ziplinepy.readthedocs.io/en/latest/"
 Issues = "https://github.com/fretgfr/zipline.py/issues"
 
+[project.scripts]
+ziplinepy = "zipline.cli.entrypoint:app"
+
 [tool.setuptools]
-packages = ["zipline"]
+packages = ["zipline", "zipline.cli", "zipline.cli.commands"]
 
 [tool.setuptools.dynamic]
 version = { attr = "zipline.meta.__version__" }

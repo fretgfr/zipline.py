@@ -11,6 +11,7 @@ Welcome to zipline.py's documentation!
    :caption: Contents:
 
    zipline
+   cli
 
 Indices and tables
 ==================

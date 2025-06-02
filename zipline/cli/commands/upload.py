@@ -10,7 +10,7 @@ from zipline.cli.commands._handling import handle_api_errors
 from zipline.cli.sync import sync
 from zipline.client import Client
 from zipline.enums import NameFormat
-from zipline.models import FileData, UploadResponse
+from zipline.models import FileData
 
 app = Typer()
 
@@ -157,7 +157,7 @@ async def upload(
         progress.update(task, description="Uploading file...", total=None)
         async with Client(server_url, token) as client:
             try:
-                uploaded_file: Union[UploadResponse, str] = await client.upload_file(
+                upload = await client.upload_file(
                     payload=file_data,
                     compression_percent=compression_percent,
                     expiry=expiry.astimezone(tz=timezone.utc) if expiry else None,
@@ -169,9 +169,8 @@ async def upload(
                     folder=folder,
                     override_extension=override_extension,
                     override_domain=override_domain,
-                    text_only=not print_object,  # pyright: ignore[reportCallIssue, reportArgumentType]
                 )
             except Exception as exception:
                 handle_api_errors(exception, server_url, traceback=verbose)
 
-        print(uploaded_file)
+        print(upload if print_object else " ".join(file.url for file in upload.files))

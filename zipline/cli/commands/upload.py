@@ -39,7 +39,7 @@ def _complete_format(incomplete: str) -> List[Union[Tuple[str, str], str]]:
 @app.command(name="upload")
 @sync
 async def upload(
-    file: FileBinaryRead = Argument(help="The path to the file you wish to upload."),
+    files: List[FileBinaryRead] = Argument(help="The path(s) to the file(s) you wish to upload."),
     server_url: str = Option(
         ...,
         "--server",
@@ -145,10 +145,14 @@ async def upload(
         transient=True,
     ) as progress:
         task = progress.add_task(description="Reading file...", total=None)
-        file_data = FileData(
-            data=file,
-            filename=override_name or file.name,
-        )
+        payload: list[FileData] = []
+        for file in files:
+            payload.append(
+                FileData(
+                    data=file,
+                    filename=override_name or file.name,
+                )
+            )
 
         if expiry and not expiry.tzinfo:
             local_tz = datetime.now().astimezone().tzinfo
@@ -158,7 +162,7 @@ async def upload(
         async with Client(server_url, token) as client:
             try:
                 upload = await client.upload_file(
-                    payload=file_data,
+                    payload,
                     compression_percent=compression_percent,
                     expiry=expiry.astimezone(tz=timezone.utc) if expiry else None,
                     format=format,

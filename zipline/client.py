@@ -791,7 +791,7 @@ class Client:
     @overload
     async def upload_file(
         self,
-        payload: FileData,
+        payload: Union[FileData, List[FileData]],
         *,
         format: Optional[NameFormat] = ...,
         compression_percent: int = ...,
@@ -809,7 +809,7 @@ class Client:
     @overload
     async def upload_file(
         self,
-        payload: FileData,
+        payload: Union[FileData, List[FileData]],
         *,
         format: Optional[NameFormat] = ...,
         compression_percent: int = ...,
@@ -826,7 +826,7 @@ class Client:
 
     async def upload_file(
         self,
-        payload: FileData,
+        payload: Union[FileData, List[FileData]],
         *,
         format: Optional[NameFormat] = None,
         compression_percent: int = 0,
@@ -846,8 +846,12 @@ class Client:
 
         Parameters
         ----------
-        payload: :class:`~zipline.models.FileData`
+        payload: Union[:class:`~zipline.models.FileData`, List[:class:`~zipline.models.FileData`]]
             Data regarding the file to upload.
+
+            .. versionchanged:: 0.28.0
+
+                It is now possible to pass a list of :class:`~zipline.models.FileData` objects.
         format: Optional[:class:`~zipline.enums.NameFormat`]
             The format of the name to assign to the uploaded file, uses Zipline's configured name formatting by default.
 
@@ -946,7 +950,11 @@ class Client:
             headers["X-Zipline-No-Json"] = "true"
 
         formdata = aiohttp.FormData()
-        formdata.add_field("file", payload.data, filename=payload.filename, content_type=payload.mimetype)
+        if isinstance(payload, list):
+            for file in payload:
+                formdata.add_field("file", file.data, filename=file.filename, content_type=file.mimetype)
+        else:
+            formdata.add_field("file", payload.data, filename=payload.filename, content_type=payload.mimetype)
 
         r = Route("POST", "/api/upload")
         data = await self.http.request(r, headers=headers, data=formdata)

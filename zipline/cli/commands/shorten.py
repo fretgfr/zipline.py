@@ -1,3 +1,4 @@
+import sys
 from typing import Optional
 
 from rich import print
@@ -31,6 +32,16 @@ async def shorten(
         envvar="ZIPLINE_TOKEN",
         prompt=True,
         hide_input=True,
+    ),
+    print_object: bool = Option(
+        bool(sys.stdout.isatty()),
+        "--object/--text",
+        "-o/-O",
+        help=(
+            "Choose how to format the output. If --text (or piped),\n"
+            "you'll get the shortened url; if --object (or on a TTY),\n"
+            "you'll get the raw Python object."
+        ),
     ),
     vanity: Optional[str] = Option(
         None,
@@ -78,4 +89,4 @@ async def shorten(
             except Exception as exception:
                 handle_api_errors(exception, server_url, traceback=verbose)
 
-    print(str(shortened_url))
+    print(shortened_url if print_object else str(shortened_url))

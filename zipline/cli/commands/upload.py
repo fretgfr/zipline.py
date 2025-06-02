@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -9,7 +10,7 @@ from zipline.cli.commands._handling import handle_api_errors
 from zipline.cli.sync import sync
 from zipline.client import Client
 from zipline.enums import NameFormat
-from zipline.models import FileData
+from zipline.models import FileData, UploadResponse
 
 app = Typer()
 
@@ -55,6 +56,16 @@ async def upload(
         envvar="ZIPLINE_TOKEN",
         prompt=True,
         hide_input=True,
+    ),
+    print_object: bool = Option(
+        bool(sys.stdout.isatty()),
+        "--object/--text",
+        "-o/-O",
+        help=(
+            "Choose how to format the output. If --text (or piped),\n"
+            "you'll get a link to the uploaded file; if --object (or on a TTY),\n"
+            "you'll get the raw Python object."
+        ),
     ),
     format: Optional[NameFormat] = Option(
         None,
@@ -142,7 +153,7 @@ async def upload(
         progress.update(task, description="Uploading file...", total=None)
         async with Client(server_url, token) as client:
             try:
-                uploaded_file = await client.upload_file(
+                uploaded_file: Union[UploadResponse, str] = await client.upload_file(
                     payload=file_data,
                     compression_percent=compression_percent,
                     expiry=expiry.astimezone(tz=timezone.utc) if expiry else None,
@@ -154,7 +165,7 @@ async def upload(
                     folder=folder,
                     override_extension=override_extension,
                     override_domain=override_domain,
-                    text_only=True,
+                    text_only=not print_object,  # pyright: ignore[reportCallIssue, reportArgumentType]
                 )
             except Exception as exception:
                 handle_api_errors(exception, server_url, traceback=verbose)

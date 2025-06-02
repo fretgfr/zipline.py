@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple, Union
 
 from rich import print
@@ -72,7 +72,7 @@ async def upload(
     expiry: Optional[datetime] = Option(
         None,
         "--expiry",
-        "-e",
+        "-E",
         help="Specify when this file should expire. When this time expires, the file will be deleted from the Zipline instance.",
     ),
     password: Optional[str] = Option(
@@ -135,13 +135,17 @@ async def upload(
             filename=override_name or file.name,
         )
 
+        if expiry and not expiry.tzinfo:
+            local_tz = datetime.now().astimezone().tzinfo
+            expiry = expiry.replace(tzinfo=local_tz)
+
         progress.update(task, description="Uploading file...", total=None)
         async with Client(server_url, token) as client:
             try:
                 uploaded_file = await client.upload_file(
                     payload=file_data,
                     compression_percent=compression_percent,
-                    expiry=expiry,
+                    expiry=expiry.astimezone(tz=timezone.utc) if expiry else None,
                     format=format,
                     password=password,
                     max_views=max_views,

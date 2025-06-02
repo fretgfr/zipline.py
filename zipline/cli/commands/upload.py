@@ -62,8 +62,8 @@ async def upload(
         "--object/--text",
         "-o/-O",
         help=(
-            "Choose how to format the output. If --text (or piped),\n"
-            "you'll get a link to the uploaded file; if --object (or on a TTY),\n"
+            "Choose how to format the output. If --text (or piped), "
+            "you'll get a link to the uploaded file; if --object (or on a TTY), "
             "you'll get the raw Python object."
         ),
     ),

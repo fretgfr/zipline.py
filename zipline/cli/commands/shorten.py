@@ -38,8 +38,8 @@ async def shorten(
         "--object/--text",
         "-o/-O",
         help=(
-            "Choose how to format the output. If --text (or piped),\n"
-            "you'll get the shortened url; if --object (or on a TTY),\n"
+            "Choose how to format the output. If --text (or piped), "
+            "you'll get the shortened url; if --object (or on a TTY), "
             "you'll get the raw Python object."
         ),
     ),

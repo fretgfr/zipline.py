@@ -84,7 +84,11 @@ async def upload(
         None,
         "--expiry",
         "-E",
-        help="Specify when this file should expire. When this time expires, the file will be deleted from the Zipline instance.",
+        help=(
+            "Specify when this file should expire.\n"
+            "When this time expires, the file will be deleted from the Zipline instance.\n"
+            "This argument uses your system's local timezone, not UTC dates."
+        ),
     ),
     password: Optional[str] = Option(
         None,

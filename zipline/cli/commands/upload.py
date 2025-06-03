@@ -58,14 +58,16 @@ async def upload(
         hide_input=True,
     ),
     print_object: bool = Option(
-        bool(sys.stdout.isatty()),
+        ...,
         "--object/--text",
         "-o/-O",
+        default_factory=lambda: bool(sys.stdout.isatty()),
         help=(
-            "Choose how to format the output. If --text (or piped), "
-            "you'll get a link to the uploaded file; if --object (or on a TTY), "
-            "you'll get the raw Python object."
+            "Choose how to format the output. "
+            "If --text (or piped), you'll get a link to the uploaded file; "
+            "if --object (or on a TTY), you'll get the raw Python object."
         ),
+        envvar="ZIPLINE_PRINT_OBJECT",
     ),
     format: Optional[NameFormat] = Option(
         None,

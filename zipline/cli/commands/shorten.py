@@ -34,14 +34,16 @@ async def shorten(
         hide_input=True,
     ),
     print_object: bool = Option(
-        bool(sys.stdout.isatty()),
+        ...,
         "--object/--text",
         "-o/-O",
+        default_factory=lambda: bool(sys.stdout.isatty()),
         help=(
-            "Choose how to format the output. If --text (or piped), "
-            "you'll get the shortened url; if --object (or on a TTY), "
-            "you'll get the raw Python object."
+            "Choose how to format the output. "
+            "If --text (or piped), you'll get the shortened URL; "
+            "if --object (or on a TTY), you'll get the raw Python object."
         ),
+        envvar="ZIPLINE_PRINT_OBJECT",
     ),
     vanity: Optional[str] = Option(
         None,

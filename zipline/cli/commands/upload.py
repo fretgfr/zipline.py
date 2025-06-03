@@ -113,11 +113,13 @@ async def upload(
     original_name: bool = Option(
         False,
         "--original-name/--generated-name",
-        "-o/-g",
+        "-G/-g",
         help="Specify whether the original name of the file should be preserved when downloading the file from Zipline.",
     ),
     folder: Optional[str] = Option(
         None,
+        "--folder",
+        "-F",
         help="Specify what folder the file should be added to after it is uploaded.",
     ),
     override_extension: Optional[str] = Option(

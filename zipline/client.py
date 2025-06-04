@@ -175,7 +175,7 @@ class Client:
     async def get_user(self, id: str, /) -> User:
         """|coro|
 
-        Retreive a user with given id.
+        Retrieve a user with given id.
 
         Parameters
         ----------

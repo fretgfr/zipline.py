@@ -61,7 +61,7 @@ async def upload(
         ...,
         "--object/--text",
         "-o/-O",
-        default_factory=lambda: bool(sys.stdout.isatty()),
+        default_factory=sys.stdout.isatty,
         help=(
             "Choose how to format the output. "
             "If --text (or piped), you'll get a link to the uploaded file; "

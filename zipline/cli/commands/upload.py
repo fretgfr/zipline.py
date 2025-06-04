@@ -166,7 +166,7 @@ async def upload(
         async with Client(server_url, token) as client:
             try:
                 upload = await client.upload_file(
-                    payload,
+                    *payload,  # list[FileData]
                     compression_percent=compression_percent,
                     expiry=expiry.astimezone(tz=timezone.utc) if expiry else None,
                     format=format,

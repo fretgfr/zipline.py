@@ -10,7 +10,7 @@ Response = TypeVar("Response")
 
 def sync(
     func: Callable[Params, Coroutine[Any, Any, Response]],
-) -> Callable[Params, Response]:  # pyright: ignore[reportExplicitAny]
+) -> Callable[Params, Response]:
     """
     Decorator that takes an async function `func(...) -> Coroutine[Any, Any, Response]`
     and turns it into a synchronous function `() -> Response` by running

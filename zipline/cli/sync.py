@@ -2,15 +2,12 @@ from asyncio import run
 from functools import wraps
 from typing import Any, Callable, Coroutine, TypeVar
 
-from typing_extensions import ParamSpec
-
-Params = ParamSpec("Params")
 Response = TypeVar("Response")
 
 
 def sync(
-    func: Callable[Params, Coroutine[Any, Any, Response]],
-) -> Callable[Params, Response]:
+    func: Callable[..., Coroutine[Any, Any, Response]],
+) -> Callable[..., Response]:
     """
     Decorator that takes an async function `func(...) -> Coroutine[Any, Any, Response]`
     and turns it into a synchronous function `() -> Response` by running
@@ -18,7 +15,7 @@ def sync(
     """
 
     @wraps(wrapped=func)
-    def wrapper(*args: Params.args, **kwargs: Params.kwargs) -> Response:
+    def wrapper(*args: Any, **kwargs: Any) -> Response:
         return run(func(*args, **kwargs))
 
     return wrapper

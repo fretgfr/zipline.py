@@ -48,7 +48,7 @@ async def shorten(
     vanity: Optional[str] = Option(
         None,
         "--vanity",
-        "-v",
+        "-V",
         help="Specify a vanity name. A name will be generated automatically if this is not provided.",
     ),
     max_views: Optional[int] = Option(
@@ -91,4 +91,6 @@ async def shorten(
             except Exception as exception:
                 handle_api_errors(exception, server_url, traceback=verbose)
 
-    print(shortened_url if print_object else str(shortened_url))
+    if print_object:
+        print(shortened_url)
+    print(shortened_url.full_url)

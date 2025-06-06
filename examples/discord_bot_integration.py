@@ -1,3 +1,5 @@
+# type: ignore
+
 import asyncio
 from typing import Any
 

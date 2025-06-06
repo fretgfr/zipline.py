@@ -7,7 +7,7 @@ import zipline
 
 IMPORT_FOLDER = pathlib.Path("/Path/to/a/folder")
 SERVER_URL = "https://zipline.example.com"
-TOKEN = ...
+TOKEN = "zipline token here"
 OUTPUT_FILENAME = "Folder Import Output.json"
 NAME_FORMAT = zipline.NameFormat.uuid
 STORE_ORIGINAL_NAME = True

@@ -27,12 +27,14 @@ async def main():
     # to implement your own behavior.
     discord.utils.setup_logging()
 
-    # 3.9+ syntax
-    async with (
-        zipline.Client("https://zipline.example.com", "your_zipline_token") as zipline_client,
-        MyBot("?", zipline_client=zipline_client, intents=intents) as bot,
-    ):
-        await bot.start("YOUR DISCORD TOKEN")
+    # # 3.9+ syntax
+    # async with (
+    #     zipline.Client("https://zipline.example.com", "your_zipline_token") as zipline_client,
+    #     MyBot("?", zipline_client=zipline_client, intents=intents) as bot,
+    # ):
+    async with zipline.Client("https://zipline.example.com", "your_zipline_token") as zipline_client:
+        async with MyBot("?", zipline_client=zipline_client, intents=intents) as bot:
+            await bot.start("YOUR DISCORD TOKEN")
 
 
 if __name__ == "__main__":

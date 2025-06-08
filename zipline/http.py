@@ -124,21 +124,21 @@ class HTTPClient:
 
             error = data.get("error", "") if isinstance(data, Dict) else data
             if status == 400:
-                raise BadRequest(f"400: {error}")
+                raise BadRequest(error, status)
             elif status == 401:
-                raise NotAuthenticated(f"{error}")
+                raise NotAuthenticated(error, status)
             elif status == 403:
-                raise Forbidden("You cannot access this resource.")
+                raise Forbidden(error, status)
             elif status == 404:
-                raise NotFound(f"Requested resource not found.")
+                raise NotFound(error, status)
             elif status == 429:
-                raise RateLimited("we are being rate limited")
+                raise RateLimited(error, status)
             elif 405 <= status < 500:
-                raise ZiplineError(f"{status}: {error}")
+                raise ZiplineError(error, status)
             elif status >= 500:
-                raise ServerError(f"{status}")
+                raise ServerError(error, status)
 
             if 200 <= status < 300:
                 return data
 
-        raise UnhandledError("an unhandled error occurred when processing your request.")
+        raise UnhandledError(error, status)

@@ -151,6 +151,10 @@ zipline.errors module
    :members:
    :show-inheritance:
 
+.. autoclass:: zipline.errors.HTTPError
+   :members:
+   :show-inheritance:
+
 .. autoclass:: zipline.errors.UnhandledError
    :members:
    :show-inheritance:

@@ -20,6 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 __all__ = (
     "ZiplineError",
     "UnhandledError",
@@ -38,43 +42,62 @@ class ZiplineError(Exception):
     pass
 
 
-class UnhandledError(ZiplineError):
+class HTTPError(ZiplineError):
+    """
+    Base class for HTTP related exceptions. All children implement the attributes of this class.
+
+    Attributes
+    ----------
+    message: Any
+        The message returned by the API.
+    code: int
+        The http status code returned by the API.
+    """
+
+    def __init__(self, message: Any, code: int):
+        super().__init__(f"{code}: {message}")
+
+        self.message = message
+        self.code = code
+
+
+class UnhandledError(HTTPError):
     """Raised by the library if the server returns a status code not handled by the lib."""
 
     pass
 
 
-class BadRequest(ZiplineError):
+class BadRequest(HTTPError):
     """Server returned a 400 response."""
 
     pass
 
 
-class Forbidden(ZiplineError):
+class Forbidden(HTTPError):
     """Server returned a 401 or 403 response."""
 
     pass
 
 
-class NotFound(ZiplineError):
+class NotFound(HTTPError):
     """Server returned a 404 response."""
 
     pass
 
 
-class RateLimited(ZiplineError):
+class RateLimited(HTTPError):
     """Server returned a 429 response."""
 
     pass
 
 
-class ServerError(ZiplineError):
+class ServerError(HTTPError):
     """Server returned a 5xx response code."""
 
     pass
 
 
-class NotAuthenticated(ZiplineError):
-    """Requesting data without an Authorization header"""
+class NotAuthenticated(HTTPError):
+    """Requesting data without an Authorization header."""
 
     pass

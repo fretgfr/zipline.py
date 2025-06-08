@@ -591,6 +591,34 @@ class Client:
         data = await self.http.request(r)
         return Tag._from_data(data, http=self.http)
 
+    async def create_tag(self, name: str, *, color: str = "#ffffff") -> Tag:
+        """|coro|
+
+        Create a tag with a given name and color.
+
+        .. versionadded:: 0.28.0
+
+        Parameters
+        ----------
+        name: str
+            The name for the tag.
+        color: str
+            The color associated with the tag, must be a hexidecimal string in the format ``#rrggbb``. Defaults to white (#ffffff).
+
+        Returns
+        -------
+        :class:`~zipline.models.Tag`
+            The newly created tag.
+        """
+        json = {
+            "name": name,
+            "color": color,
+        }
+
+        r = Route("POST", "/api/user/tags")
+        data = await self.http.request(r, json=json)
+        return Tag._from_data(data, http=self.http)
+
     async def delete_tag(self, id: str, /) -> Tag:
         """|coro|
 

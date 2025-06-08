@@ -343,6 +343,100 @@ class File:
         data = await self._http.request(r, json=payload)
         return File._from_data(data, http=self._http)
 
+    async def add_tag(self, tag: Tag, /) -> File:
+        """|coro|
+
+        Add a tag to this file.
+
+        .. versionadded:: 0.28.0
+
+        .. note::
+
+            This method should not be used for bulk updates. Please use :meth:`edit` instead.
+
+        Equivalent to:
+
+        .. code-block:: python3
+
+            tag = ...
+
+            current_tags = file.tags or []
+            current_tags.append(tag)
+
+            await file.edit(tags=current_tags)
+
+        Parameters
+        ----------
+        tag: :class:`~zipline.models.Tag`
+            The tag to be added to this file.
+
+        Returns
+        -------
+        :class:`~zipline.models.File`
+            A new instance with the latest information about this file.
+
+        Raises
+        ------
+        ValueError
+            The tag is already applied to this file.
+        """
+
+        tags = self.tags or []
+
+        if tag in tags:
+            raise ValueError("tag is already applied.")
+
+        tags.append(tag)
+
+        return await self.edit(tags=tags)
+
+    async def remove_tag(self, tag: Tag, /) -> File:
+        """|coro|
+
+        Remove a tag from this file.
+
+        .. versionadded:: 0.28.0
+
+        .. note::
+
+            This method should not be used for bulk updates. Please use :meth:`edit` instead.
+
+                Equivalent to:
+
+        .. code-block:: python3
+
+            tag = ...
+
+            current_tags = file.tags or []
+            current_tags.remove(tag)
+
+            await file.edit(tags=current_tags)
+
+        Parameters
+        ----------
+        tag: :class:`~zipline.models.Tag`
+            The tag to be removed from this file.
+
+        Returns
+        -------
+        :class:`~zipline.models.File`
+            A new instance with the latest information about this file.
+
+        Raises
+        ------
+        ValueError
+            The file does not have the given tag.
+        """
+
+        tags = self.tags or []
+
+        if not tag in tags:
+            raise ValueError("tag is not applied.")
+
+        tags.remove(tag)
+
+        return await self.edit(tags=tags)
+
     async def remove_favorite(self) -> File:
         """|coro|
 
@@ -1080,6 +1174,11 @@ class Tag:
 
     def __str__(self) -> str:
         return self.name
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Tag):
+            return self.id == other.id
+        raise NotImplementedError
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> Tag:

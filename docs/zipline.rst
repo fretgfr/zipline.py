@@ -130,6 +130,16 @@ zipline.enums module
    :show-inheritance:
 
 
+zipline.color module
+--------------------
+
+.. currentmodule:: zipline.color
+
+.. autoclass:: zipline.color.color
+   :members:
+   :show-inheritance
+
+
 zipline.utils module
 --------------------
 

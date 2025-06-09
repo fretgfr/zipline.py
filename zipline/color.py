@@ -53,6 +53,11 @@ class Color:
         .. describe:: int(x)
 
             Returns the raw value of the color.
+
+    Attributes
+    ------------
+    value: :class:`int`
+        The raw integer value of this color.
     """
 
     def __init__(self, value: int):
@@ -113,9 +118,9 @@ class Color:
         Construct a Color from a given string.
 
         Supported formats:
-        * RGB: ```rgb(rrr, ggg, bbb)```
-        * HSV: ``hsv(hh, 0.s, 0.v)``
-        * Hex: ``#rrggbb`` or ``#rgb``
+        - RGB: ```rgb(rrr, ggg, bbb)```
+        - HSV: ``hsv(hh, 0.s, 0.v)``
+        - Hex: ``#rrggbb`` or ``#rgb``
 
         Parameters
         ----------

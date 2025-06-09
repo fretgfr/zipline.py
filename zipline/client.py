@@ -819,6 +819,34 @@ class Client:
         data = await self.http.request(r, params=query_params)
         return [File._from_data(d, http=self.http) for d in data]
 
+    async def delete_files(self, *files: Union[File, str], delete_datasource: bool = False) -> int:
+        """|coro|
+
+        Delete many files from Zipline.
+
+        .. versionadded:: 0.28.0
+
+        Parameters
+        ----------
+        files: Union[:class:`zipline.models.File`, :class:`str`]
+            The files to be removed. May either be :class:`~zipline.models.File` objects or a file ids.
+        delete_datasource : bool
+            Whether to delete the files from the underlying datasource as well. Defaults to False.
+
+        Returns
+        -------
+        :class:`int`
+            The number of deleted files.
+        """
+        json = {
+            "files": [file.id if isinstance(file, File) else file for file in files],
+            "delete_datasourceFiles": "true" if delete_datasource else "false",
+        }
+
+        r = Route("DELETE", "/api/user/files/transaction")
+        data = await self.http.request(r, json=json)
+        return data["count"]
+
     @overload
     async def upload_file(
         self,

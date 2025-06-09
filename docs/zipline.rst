@@ -137,7 +137,7 @@ zipline.color module
 
 .. autoclass:: zipline.color.Color
    :members:
-   :show-inheritance
+   :show-inheritance:
 
 
 zipline.utils module

@@ -1178,7 +1178,8 @@ class Tag:
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Tag):
             return self.id == other.id
-        raise NotImplementedError
+
+        return NotImplemented
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /, *, http: HTTPClient) -> Tag:

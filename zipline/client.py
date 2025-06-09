@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING, AsyncGenerator, Dict, List, Literal, Optional,
 
 import aiohttp
 
+from .color import Color
 from .enums import FileSearchField, FileSearchSort, NameFormat, Order, RecentFilesFilter
 from .http import HTTPClient, Route
 from .models import (
@@ -591,7 +592,7 @@ class Client:
         data = await self.http.request(r)
         return Tag._from_data(data, http=self.http)
 
-    async def create_tag(self, name: str, *, color: str = "#ffffff") -> Tag:
+    async def create_tag(self, name: str, *, color: Optional[Color] = None) -> Tag:
         """|coro|
 
         Create a tag with a given name and color.
@@ -602,17 +603,19 @@ class Client:
         ----------
         name: str
             The name for the tag.
-        color: str
-            The color associated with the tag, must be a hexidecimal string in the format ``#rrggbb``. Defaults to white (#ffffff).
+        color: Optional[:class:`~zipline.color.Color`]
+            The color to be associated with the created tag. If not given, defaults to white.
 
         Returns
         -------
         :class:`~zipline.models.Tag`
             The newly created tag.
         """
+        color = color or Color.default()
+
         json = {
             "name": name,
-            "color": color,
+            "color": color.to_hex(),
         }
 
         r = Route("POST", "/api/user/tags")

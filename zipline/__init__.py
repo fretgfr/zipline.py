@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 from .client import *
+from .color import *
 from .enums import *
 from .errors import *
 from .meta import *

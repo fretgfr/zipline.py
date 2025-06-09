@@ -30,6 +30,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Sequence, Type, Union
 
+from .color import Color
 from .enums import FileSearchField, FileSearchSort, OAuthProviderType, Order, QuotaType, RecentFilesFilter, UserRole
 from .errors import ZiplineError
 from .http import HTTPClient, Route
@@ -1156,7 +1157,7 @@ class Tag:
         When this tag was last updated.
     name: :class:`str`
         The name of this tag.
-    color: :class:`str`
+    color: :class:`~zipline.color.Color`
         The color associated with this tag.
     files: Optional[List[:class:`~zipline.models.TagFile`]]
         Partial files associated with this tag, if available.
@@ -1169,7 +1170,7 @@ class Tag:
     created_at: datetime.datetime
     updated_at: datetime.datetime
     name: str
-    color: str
+    color: Color
     files: Optional[List[TagFile]]
 
     def __str__(self) -> str:
@@ -1189,25 +1190,23 @@ class Tag:
             parse_iso_timestamp(data["createdAt"]),
             parse_iso_timestamp(data["updatedAt"]),
             data["name"],
-            data["color"],
+            Color.from_str(data["color"]),
             [TagFile(http, r["id"]) for r in data["files"]] if "files" in data else None,
         )
 
-    async def edit(self, color: Optional[str] = None, name: Optional[str] = None) -> Tag:
+    async def edit(self, color: Optional[Color] = None, name: Optional[str] = None) -> Tag:
         """|coro|
 
         Edit this tag.
 
         Parameters
         ----------
-        color: Optional[:class:`str`]
+        color: Optional[:class:`~zipline.color.Color`]
             The new color of the tag, if given.
 
-            .. note::
+            .. versionchanged:: 0.28.0
 
-                Must be in hex format with preceeding #
-
-                ex. #rrggbb
+                This argument now accepts a :class:`~zipline.color.Color`.
         name: Optional[:class:`str`]
             The new name of the tag, if given.
 
@@ -1219,7 +1218,7 @@ class Tag:
         payload = {}
 
         if color:
-            payload["color"] = color
+            payload["color"] = color.to_hex()
         if name:
             payload["name"] = name
 

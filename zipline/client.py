@@ -830,7 +830,7 @@ class Client:
         ----------
         files: Union[:class:`zipline.models.File`, :class:`str`]
             The files to be removed. May either be :class:`~zipline.models.File` objects or a file ids.
-        delete_datasource : bool
+        delete_datasource: :class:`bool`
             Whether to delete the files from the underlying datasource as well. Defaults to False.
 
         Returns
@@ -844,6 +844,39 @@ class Client:
         }
 
         r = Route("DELETE", "/api/user/files/transaction")
+        data = await self.http.request(r, json=json)
+        return data["count"]
+
+    async def bulk_file_favorite(self, *files: Union[File, str], favorite: bool) -> int:
+        """|coro|
+
+        Update the favorite status for many files.
+
+        .. note::
+
+            For bulk additions to folders, see :meth:`~zipline.models.Folder.add_files`.
+
+        .. versionadded:: 0.28.0
+
+        Parameters
+        ----------
+        files: Union[:class:`~zipline.models.File`, :class:`str`]
+            The files to update favorite status for. These can be either :class:`~zipline.models.File` instances or
+            strings representing the ids of the files.
+        favorite: :class:`bool`
+            The new favorite status.
+
+        Returns
+        -------
+        :class:`int`
+            The number of updated files.
+        """
+        json = {
+            "files": [file.id if isinstance(file, File) else file for file in files],
+            "favorite": "true" if favorite else "false",
+        }
+
+        r = Route("PATCH", "/api/user/files/transaction")
         data = await self.http.request(r, json=json)
         return data["count"]
 

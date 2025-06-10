@@ -468,6 +468,30 @@ class Client:
         data = await self.http.request(r)
         return [URL._from_data(d, http=self.http) for d in data]
 
+    @overload
+    async def shorten_url(
+        self,
+        original_url: str,
+        *,
+        vanity: Optional[str] = ...,
+        max_views: Optional[int] = ...,
+        password: Optional[str] = ...,
+        enabled: bool = ...,
+        text_only: Literal[False] = ...,
+    ) -> URL: ...
+
+    @overload
+    async def shorten_url(
+        self,
+        original_url: str,
+        *,
+        vanity: Optional[str] = ...,
+        max_views: Optional[int] = ...,
+        password: Optional[str] = ...,
+        enabled: bool = ...,
+        text_only: Literal[True] = ...,
+    ) -> str: ...
+
     async def shorten_url(
         self,
         original_url: str,
@@ -476,7 +500,8 @@ class Client:
         max_views: Optional[int] = None,
         password: Optional[str] = None,
         enabled: bool = True,
-    ) -> URL:
+        text_only: bool = False,
+    ) -> Union[URL, str]:
         """|coro|
 
         Shortens a url.
@@ -497,11 +522,16 @@ class Client:
             Whether the url should be enabled for use, by default True.
 
             .. versionadded:: 0.21.0
+        text_only: :class:`bool`
+            If True, return a plain text response including only the created url, by default False.
+
+            .. versionadded:: 0.28.0
 
         Returns
         -------
-        :class:`str`
-            The shortened url.
+        Union[:class:`~zipline.models.URL`, :class:`str`]
+            If text_only is False, a full :class:`~zipline.models.URL` instance. Otherwise a plain
+            string with the resulting url.
 
         Raises
         ------
@@ -519,12 +549,14 @@ class Client:
             headers["X-Zipline-Max-Views"] = str(max_views)
         if password:
             headers["X-Zipline-Password"] = password
+        if text_only:
+            headers["X-Zipline-No-Json"] = "true"
 
         payload = {"destination": original_url, "vanity": vanity, "enabled": enabled}
 
         r = Route("POST", "/api/user/urls")
         data = await self.http.request(r, headers=headers, json=payload)
-        return URL._from_data(data, http=self.http)
+        return URL._from_data(data, http=self.http) if text_only is False else data
 
     async def delete_url(self, id: str, /) -> URL:
         """|coro|
@@ -913,7 +945,7 @@ class Client:
         folder: Optional[Union[Folder, str]] = ...,
         override_extension: Optional[str] = ...,
         override_domain: Optional[Union[str, List[str]]] = ...,
-        text_only: Literal[True],
+        text_only: Literal[True] = ...,
     ) -> str: ...
 
     async def upload_file(

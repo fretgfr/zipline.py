@@ -477,6 +477,7 @@ class Client:
         max_views: Optional[int] = ...,
         password: Optional[str] = ...,
         enabled: bool = ...,
+        override_domain: Optional[Union[str, List[str]]] = ...,
         text_only: Literal[False] = ...,
     ) -> URL: ...
 
@@ -489,6 +490,7 @@ class Client:
         max_views: Optional[int] = ...,
         password: Optional[str] = ...,
         enabled: bool = ...,
+        override_domain: Optional[Union[str, List[str]]] = ...,
         text_only: Literal[True] = ...,
     ) -> str: ...
 
@@ -500,6 +502,7 @@ class Client:
         max_views: Optional[int] = None,
         password: Optional[str] = None,
         enabled: bool = True,
+        override_domain: Optional[Union[str, List[str]]] = None,
         text_only: bool = False,
     ) -> Union[URL, str]:
         """|coro|
@@ -522,6 +525,11 @@ class Client:
             Whether the url should be enabled for use, by default True.
 
             .. versionadded:: 0.21.0
+        override_domain: Optional[Union[:class:`str`, List[:class:`str`]]]
+            The domain to return a url for. Must still be connected to the Zipline instance or it will not work.
+            If a list of domains is passed, a random one will be chosen.
+
+            .. versionadded:: 0.28.0
         text_only: :class:`bool`
             If True, return a plain text response including only the created url, by default False.
 
@@ -549,6 +557,8 @@ class Client:
             headers["X-Zipline-Max-Views"] = str(max_views)
         if password:
             headers["X-Zipline-Password"] = password
+        if override_domain:
+            headers["X-Zipline-Domain"] = ",".join(override_domain) if isinstance(override_domain, list) else override_domain
         if text_only:
             headers["X-Zipline-No-Json"] = "true"
 
@@ -1004,6 +1014,7 @@ class Client:
             .. versionadded:: 0.21.0
         override_domain: Optional[Union[:class:`str`, List[:class:`str`]]]
             The domain to return a url for. Must still be connected to the Zipline instance or it will not work.
+            If a list of domains is passed, a random one will be chosen.
 
             .. versionadded:: 0.25.0
 

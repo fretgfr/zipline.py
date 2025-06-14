@@ -41,6 +41,7 @@ from .utils import (
     guess_mimetype_by_magicnumber,
     key_valid_not_none,
     parse_iso_timestamp,
+    safe_get,
 )
 
 __all__ = (
@@ -1939,19 +1940,83 @@ class ServerVersionInfo:
     """
     Version information for a Zipline instance.
 
+    .. versionchanged:: 0.28.0
+
+        This now only supportsO the latest versioning scheme in use by Zipline as of ``4.1.0``.
+
     Attributes
     ----------
-    version: :class:`str`
-        The current version being used.
+    latest_tag: :class:`str`
+        The latest version tag available.
+    latest_url: :class:`str`
+        The Github link to the latest version tag available.
+    latest_commit: Optional[Dict[:class:`str`, Union[:class:`str`, :class:`bool`]]]
+        Information about the latest commit. Only available if the server is running an upstream version.
+        Available keys are: ``sha``, ``url``, ``pull``.
+    is_upstream: :class:`bool`
+        Whether the server is running an upstream version.
+    is_release: :class:`bool`
+        Whether the version being run is an official release.
+    is_latest: :class:`bool`
+        Whether the server is running the latest available version.
+    version_tag: :class:`str`
+        The tag of the version the server is running.
+    version_sha: :class:`str`
+        The SHA of the version the server is running.
+    version_url: :class:`str`
+        The Github link to the current versions commit on Github.
+    details_version: :class:`str`
+        The version currently being run.
+    details_sha: :class:`str`
+        The SHA of the version currently being run.
     """
 
-    __slots__ = ("version",)
+    __slots__ = (
+        "latest_tag",
+        "latest_url",
+        "latest_commit",
+        "is_upstream",
+        "is_release",
+        "is_latest",
+        "version_tag",
+        "version_sha",
+        "version_url",
+        "details_version",
+        "details_sha",
+    )
 
-    version: str
+    latest_tag: str
+    latest_url: str
+    latest_commit: Optional[Dict[str, Union[str, bool]]]
+    is_upstream: bool
+    is_release: bool
+    is_latest: bool
+    version_tag: str
+    version_sha: str
+    version_url: str
+    details_version: str
+    details_sha: str
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /) -> ServerVersionInfo:
-        return cls(data["version"])
+        return cls(
+            data["latest"]["tag"],
+            data["latest"]["url"],
+            safe_get(data, "latest", "commit"),
+            data["is_upstream"],
+            data["is_release"],
+            data["is_latest"],
+            data["version"]["tag"],
+            data["version"]["sha"],
+            data["version"]["url"],
+            data["details"]["version"],
+            data["details"]["sha"],
+        )
+
+    @property
+    def version(self) -> str:
+        """Returns the Zipline version currently in use."""
+        return self.details_version
 
 
 @dataclass

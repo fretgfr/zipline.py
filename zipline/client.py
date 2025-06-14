@@ -69,7 +69,7 @@ class Client:
                     ...
     """
 
-    __slots__ = ("server_url", "http")
+    __slots__ = ("server_url", "http", "zipline_domains")
 
     def __init__(self, server_url: str, token: str) -> None:
         """Creates a new Client.
@@ -133,7 +133,7 @@ class Client:
         role: :class:`~zipline.enums.UserRole`
             The permissions level of the created User. Only available if used by a Super Admin.
         avatar: Optional[:class:`~zipline.models.Avatar`]
-            If given, a tuple containing a string denoting the MIME type of the data being uploaded and the data itself as bytes.
+            If given, an object containing the avatar to be assigned to the created user.
 
             .. admonition:: Example
 
@@ -207,7 +207,7 @@ class Client:
         Returns
         -------
         List[:class:`~zipline.models.User`]
-            The retrieved users
+            The retrieved users.
 
         Raises
         ------
@@ -228,7 +228,7 @@ class Client:
         id: :class:`str`
             The id of the user to delete.
         remove_data: :class:`bool`
-            Whether the user's files and urls should be removed, by default True
+            Whether the user's files and urls should be removed, by default True.
 
         Returns
         -------
@@ -516,7 +516,7 @@ class Client:
         vanity: Optional[:class:`str`]
             A vanity name to use. None to receive a randomly assigned name.
         max_views: Optional[:class:`int`]
-            The number of times the url can be used before being deleted. None for unlimited uses, by default None
+            The number of times the url can be used before being deleted. None for unlimited uses, by default None.
         password: Optional[:class:`str`]
             The password required to use the URL, if given.
 
@@ -761,7 +761,7 @@ class Client:
         search_query: Optional[str] = None,
     ) -> AsyncGenerator[File, None]:
         """
-        Retrieves an :term:`asynchronous generator` of the pages of files owned by the current user that meet the defined criteria.
+        Retrieves an :term:`asynchronous generator` of the files owned by the current user that meet the defined criteria.
 
         This method behaves in a similar fashion to :meth:`~zipline.client.Client.get_files`.
 
@@ -830,7 +830,7 @@ class Client:
     ) -> List[File]:
         """|coro|
 
-        Gets recent files uploaded by you.
+        Gets recent files uploaded by the current user.
 
         Parameters
         ----------

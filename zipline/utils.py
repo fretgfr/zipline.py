@@ -196,7 +196,7 @@ def safe_get(dict_: Dict[Any, Any], *keys: Any) -> Optional[Any]:
     Parameters
     ----------
     dict_: Dict[Any, Any]
-        The dictionary to get the key from
+        The dictionary to get the key from.
     keys: Any
         The keys to get from the dictionary. Processed in order.
 
@@ -228,7 +228,7 @@ def build_avatar_payload(mime: str, data: bytes) -> str:
     Returns
     -------
     str
-        The encoded data
+        The encoded data.
     """
     avatar_bytes_encoded = base64.b64encode(data).decode("ascii")
 

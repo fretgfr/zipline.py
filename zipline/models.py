@@ -1103,7 +1103,7 @@ class Invite:
 
 class TagFile:
     """
-    Partial file given with Tags.
+    Partial file given with tags.
 
     .. note::
 
@@ -1594,7 +1594,7 @@ class PartialQuota:
         .. note::
 
             This may only be omitted if :attr:`~zipline.PartialQuota.type` is :attr:`~zipline.QuotaType.none`
-    max_urls: Optional[int]
+    max_urls: Optional[:class:`int`]
         The url limit for this quota.
 
         .. note::

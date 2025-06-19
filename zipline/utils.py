@@ -340,7 +340,7 @@ def key_valid_not_none(key: str, dict_: Dict[str, Any]) -> bool:
 
 
 class _DictableMixin:
-    def __is_dataclass_instance(self, obj: Any) -> bool:
+    def __is_dictable_instance(self, obj: Any) -> bool:
         return (is_dataclass(obj) and not isinstance(self, type)) or isinstance(obj, _DictableMixin)
 
     def __element_to_json(self, val: Any) -> Any:
@@ -356,7 +356,7 @@ class _DictableMixin:
         elif isinstance(val, dict):
             return self.__normalize_dict(val)
 
-        elif self.__is_dataclass_instance(val):
+        elif self.__is_dictable_instance(val):
             return self.__process_object(val)
 
         else:

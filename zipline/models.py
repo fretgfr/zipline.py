@@ -37,6 +37,7 @@ from .http import HTTPClient, Route
 from .utils import (
     JSON,
     MISSING,
+    _DictableMixin,
     build_avatar_payload,
     generate_quota_payload,
     guess_mimetype_by_magicnumber,
@@ -70,7 +71,7 @@ __all__ = (
 
 
 @dataclass
-class File:
+class File(_DictableMixin):
     """
     Represents a file stored on Zipline.
 
@@ -490,7 +491,7 @@ class File:
 
 
 @dataclass
-class Folder:
+class Folder(_DictableMixin):
     """
     Represents a Folder on Zipline.
 
@@ -676,7 +677,7 @@ class Folder:
 
 
 @dataclass
-class User:
+class User(_DictableMixin):
     """
     Represents a Zipline user.
 
@@ -929,7 +930,7 @@ class User:
 
 
 @dataclass
-class InviteUser:
+class InviteUser(_DictableMixin):
     """
     User information provided with an :class:`~zipline.models.Invite`.
 
@@ -988,7 +989,7 @@ class InviteUser:
 
 
 @dataclass
-class Invite:
+class Invite(_DictableMixin):
     """
     Represents an invite to a Zipline instance.
 
@@ -1101,7 +1102,7 @@ class Invite:
         return Invite._from_data(data, http=self._http)
 
 
-class TagFile:
+class TagFile(_DictableMixin):
     """
     Partial file given with tags.
 
@@ -1137,7 +1138,7 @@ class TagFile:
 
 
 @dataclass
-class Tag:
+class Tag(_DictableMixin):
     """
     Represents a tag on Zipline.
 
@@ -1256,7 +1257,7 @@ class Tag:
 
 
 @dataclass
-class URL:
+class URL(_DictableMixin):
     """
     Represents a shortened url on Zipline.
 
@@ -1419,7 +1420,7 @@ class URL:
 
 
 @dataclass
-class UploadFile:
+class UploadFile(_DictableMixin):
     """
     File data given by the API when a file is uploaded.
 
@@ -1479,7 +1480,7 @@ class UploadFile:
 
 
 @dataclass
-class UploadResponse:
+class UploadResponse(_DictableMixin):
     """
     Response given by the API when a file or multiple files are uploaded.
 
@@ -1621,7 +1622,7 @@ class PartialQuota:
 
 
 @dataclass
-class UserQuota:
+class UserQuota(_DictableMixin):
     """
     Represents a quota assigned to a :class:`~zipline.models.User` in Zipline.
 
@@ -1739,7 +1740,7 @@ class UserQuota:
 
 
 @dataclass
-class UserPasskey:
+class UserPasskey(_DictableMixin):
     """
     A passkey a Zipline :class:`~zipline.models.User` has set up.
 
@@ -1787,7 +1788,7 @@ class UserPasskey:
 
 
 @dataclass
-class OAuthProvider:
+class OAuthProvider(_DictableMixin):
     """
     Represents an OAuth provider being used by a :class:`~zipline.models.User` on Zipline.
 
@@ -1850,7 +1851,7 @@ class OAuthProvider:
         )
 
 
-class Thumbnail:
+class Thumbnail(_DictableMixin):
     """
     Thumbnail data for a Zipline :class:`~zipline.models.File`.
 
@@ -1871,7 +1872,7 @@ class Thumbnail:
 
 
 @dataclass
-class UserViewSettings:
+class UserViewSettings(_DictableMixin):
     """
     Represents view settings for a Zipline :class:`~zipline.models.User`.
 
@@ -1935,7 +1936,7 @@ class UserViewSettings:
 
 
 @dataclass
-class ServerVersionInfo:
+class ServerVersionInfo(_DictableMixin):
     """
     Version information for a Zipline instance.
 
@@ -2019,7 +2020,7 @@ class ServerVersionInfo:
 
 
 @dataclass
-class UserStats:
+class UserStats(_DictableMixin):
     """
     Stats for a Zipline :class:`~zipline.models.User`.
 
@@ -2083,7 +2084,7 @@ class UserStats:
 
 
 @dataclass
-class UserFilesResponse:
+class UserFilesResponse(_DictableMixin):
     """
     Represents a response to a file search on Zipline.
 

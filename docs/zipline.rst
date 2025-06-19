@@ -17,83 +17,83 @@ zipline.models module
 
 .. autoclass:: zipline.models.File
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.Folder
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.User
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.InviteUser
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.Invite
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.TagFile
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.Tag
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.URL
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.UploadFile
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.UploadResponse
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.FileData
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.PartialQuota
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.UserQuota
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.OAuthProvider
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.Thumbnail
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.UserViewSettings
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.ServerVersionInfo
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.UserStats
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.UserFilesResponse
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 .. autoclass:: zipline.models.Avatar
    :members:
-   :show-inheritance:
+   :inherited-members:
 
 
 zipline.enums module

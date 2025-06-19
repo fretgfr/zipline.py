@@ -22,6 +22,7 @@ SOFTWARE.
 
 import base64
 import datetime
+from dataclasses import is_dataclass
 from itertools import islice
 from operator import attrgetter
 from typing import (
@@ -336,3 +337,51 @@ def guess_mimetype_by_magicnumber(data: bytes) -> Optional[str]:
 
 def key_valid_not_none(key: str, dict_: Dict[str, Any]) -> bool:
     return key in dict_ and dict_[key] is not None
+
+
+class _DictableMixin:
+    def __is_dataclass_instance(self, obj: Any) -> bool:
+        return (is_dataclass(obj) and not isinstance(self, type)) or isinstance(obj, _DictableMixin)
+
+    def __element_to_json(self, val: Any) -> Any:
+        if isinstance(val, (str, int, float, type(None), bool)):
+            return val
+
+        elif isinstance(val, datetime.datetime):
+            return val.isoformat()
+
+        elif isinstance(val, list):
+            return [self.__element_to_json(elem) for elem in val]
+
+        elif isinstance(val, dict):
+            return self.__normalize_dict(val)
+
+        elif self.__is_dataclass_instance(val):
+            return self.__process_object(val)
+
+        else:
+            return MISSING
+
+    def __normalize_dict(self, data: dict) -> None:
+        for key in list(data.keys()):
+            val = self.__element_to_json(data[key])
+            if val is MISSING:
+                data.pop(key, None)
+            else:
+                data[key] = val
+
+    def __process_object(self, _object: Any) -> JSON:
+        ret = {name: getattr(_object, name) for name in dir(_object) if not name.startswith(("_", "__"))}
+        self.__normalize_dict(ret)
+        return ret
+
+    def as_json(self) -> JSON:
+        """
+        Recursively transform this class into a JSON-like object.
+
+        Returns
+        -------
+        JSON
+            A JSON-like object representing the data contained in the instance.
+        """
+        return self.__process_object(self)

@@ -32,6 +32,7 @@ from typing import (
     Dict,
     Generator,
     Iterable,
+    List,
     Optional,
     Tuple,
     TypeVar,
@@ -50,6 +51,9 @@ __all__ = (
 T = TypeVar("T")
 _Iter = Union[Iterable[T], AsyncIterable[T]]
 Coro = Coroutine[Any, Any, T]
+
+_JSONPrimitive = Union[None, bool, str, float, int]
+JSON = Union[_JSONPrimitive, List["JSON"], Dict[str, "JSON"]]
 
 
 def parse_iso_timestamp(iso_str: str, /) -> datetime.datetime:

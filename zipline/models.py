@@ -35,6 +35,7 @@ from .enums import FileSearchField, FileSearchSort, OAuthProviderType, Order, Qu
 from .errors import ZiplineError
 from .http import HTTPClient, Route
 from .utils import (
+    JSON,
     MISSING,
     build_avatar_payload,
     generate_quota_payload,
@@ -66,8 +67,6 @@ __all__ = (
     "UserFilesResponse",
     "Avatar",
 )
-
-JSON = Union[Dict[str, Any], List[Any], int, str, float, bool, Type[None]]
 
 
 @dataclass

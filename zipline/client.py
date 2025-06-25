@@ -55,13 +55,13 @@ __all__ = ("Client",)
 
 
 class Client:
-    """A Zipline Client.
+    """A Zipline client.
 
     .. container:: operations
 
         .. describe:: async with x:
 
-            Returns the Client itself. Used to gracefully close the client on exit.
+            Returns the client itself. Used to gracefully close the client on exit.
 
             .. code-block:: python3
 
@@ -72,7 +72,7 @@ class Client:
     __slots__ = ("server_url", "http", "zipline_domains")
 
     def __init__(self, server_url: str, token: str) -> None:
-        """Creates a new Client.
+        """Creates a new client.
 
         Parameters
         ----------

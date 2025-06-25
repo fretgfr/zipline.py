@@ -492,7 +492,7 @@ class File:
 @dataclass
 class Folder:
     """
-    Represents a Folder on Zipline.
+    Represents a folder on Zipline.
 
     .. container:: operations
 
@@ -1941,7 +1941,7 @@ class ServerVersionInfo:
 
     .. versionchanged:: 0.28.0
 
-        This now only supportsO the latest versioning scheme in use by Zipline as of ``4.1.0``.
+        This now only supports the latest versioning scheme in use by Zipline as of ``4.1.0``.
 
     Attributes
     ----------

@@ -86,7 +86,11 @@ class NotFound(HTTPError):
 
 
 class PayloadTooLarge(HTTPError):
-    """Server returned a 413 response."""
+    """
+    Server returned a 413 response.
+
+    .. versionadded:: 0.28.0
+    """
 
     pass
 

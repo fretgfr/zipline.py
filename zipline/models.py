@@ -630,15 +630,33 @@ class Folder:
         data = await self._http.request(r, json=payload)
         return Folder._from_data(data, http=self._http)
 
-    async def edit(self, *, name: str) -> Folder:
+    async def edit(
+        self,
+        *,
+        name: Optional[str] = None,
+        public: Optional[bool] = None,
+        allow_uploads: Optional[bool] = None,
+    ) -> Folder:
         """|coro|
 
         Edit this folder.
 
         Parameters
         ----------
-        name: :class:`str`
-            The new name of this folder.
+        name: Optional[:class:`str`]
+            The new name of this folder, if given.
+
+            .. versionchanged:: 0.28.0
+
+                This field is no longer required.
+        public: Optional[:class:`bool`]
+            Whether this folder should be public.
+
+            .. versionadded:: 0.28.0
+        allow_uploads: Optional[:class:`bool`]
+            Whether this folder should allow unauthenticated uploads.
+
+            .. versionadded:: 0.28.0
 
         Returns
         -------
@@ -647,10 +665,20 @@ class Folder:
 
         Raises
         ------
+        :class:`~zipline.errors.BadRequest`
+            At least one field must be provided.
         :class:`~zipline.errors.NotFound`
             This folder no longer exists.
         """
-        payload = {"name": name}
+        payload = dict()
+
+        if name is not None:
+            payload["name"] = name
+        if public is not None:
+            payload["isPublic"] = public
+        if allow_uploads is not None:
+            payload["allowUploads"] = allow_uploads
+
         r = Route("PATCH", f"/api/user/folders/{self.id}")
         data = await self._http.request(r, json=payload)
         return Folder._from_data(data, http=self._http)

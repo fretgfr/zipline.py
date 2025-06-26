@@ -45,8 +45,9 @@ from .models import (
     UserFilesResponse,
     UserRole,
     UserStats,
+    UserViewSettings,
 )
-from .utils import dt_from_delta_or_dt, to_iso_format
+from .utils import MISSING, dt_from_delta_or_dt, to_iso_format
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -215,6 +216,68 @@ class Client:
         r = Route("GET", "/api/users")
         data = await self.http.request(r)
         return [User._from_data(data, http=self.http) for data in data]
+
+    async def edit_current_user(
+        self,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        avatar: Optional[Avatar] = MISSING,
+        view_settings: Optional[UserViewSettings] = None,
+    ) -> User:
+        """|coro|
+
+        Edit the currently authenticated user.
+
+        .. note::
+
+            Only provided parameters will be updated. At least one parameter must be specified.
+
+        .. versionadded:: 0.28.0
+
+        Parameters
+        ----------
+        username: Optional[:class:`str`]
+            The new username for the user.
+        password: Optional[:class:`str`]
+            The new password for the user.
+        avatar: Optional[:class:`~zipline.models.Avatar`]
+            The new avatar for the user.
+        view_settings: Optional[:class:`~zipline.models.UserViewSettings`]
+            The new view settings for the user.
+
+        Returns
+        -------
+        :class:`~zipline.models.User`
+            The newly edited user model.
+
+        Raises
+        ------
+        :class:`ValueError`
+            No parameters were specified.
+        :class:`~zipline.errors.BadRequest`
+            ``username`` is already taken or any provided argument is invalid.
+        """
+
+        payload = dict()
+
+        if username:
+            payload["username"] = username
+
+        if password:
+            payload["password"] = password
+
+        if avatar:
+            payload["avatar"] = avatar.to_payload_str()
+
+        if view_settings:
+            payload["view"] = view_settings._to_payload()
+
+        if len(payload) == 0:
+            raise ValueError("at least one parameter must be specified")
+
+        r = Route("PATCH", "/api/user")
+        data = await self.http.request(r, json=payload)
+        return User._from_data(data, http=self.http)
 
     async def delete_user(self, id, /, *, remove_data: bool = True) -> User:
         """|coro|

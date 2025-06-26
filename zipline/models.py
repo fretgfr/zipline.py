@@ -2053,16 +2053,28 @@ class UserViewSettings:
         How the content should be aligned on the page.
     show_mimetype: Optional[:class:`bool`]
         Whether the content's MIME type should be displayed.
+    show_tags: Optional[:class:`bool`]
+        Whether applied tags should be shown.
+
+        .. versionadded:: 0.28.0
+    show_folder: Optional[:class:`bool`]
+        Whether to show the folder this file is in.
+
+        .. versionadded:: 0.28.0
     content: Optional[:class:`str`]
-        The view content.
+        Custom content string.
     embed: Optional[:class:`bool`]
         Whether embed tags should be present.
     embed_title: Optional[:class:`str`]
         The title of the embed the content will generate, if applicable.
     embed_description: Optional[:class:`str`]
         The description of the embed the content will generate, if applicable.
-    embed_color: Optional[:class:`str`]
+    embed_color: Optional[:class:`~zipline.color.Color`]
         The color of the embed the content will generate, if applicable.
+
+        .. versionchanged:: 0.28.0
+
+            This parameter is now a :class:`~zipline.color.Color`.
     embed_site_name: Optional[:class:`str`]
         The name of the site the embed will redirect to, if applicable.
     """
@@ -2071,6 +2083,8 @@ class UserViewSettings:
         "enabled",
         "align",
         "show_mimetype",
+        "show_tags",
+        "show_folder",
         "content",
         "embed",
         "embed_title",
@@ -2082,11 +2096,13 @@ class UserViewSettings:
     enabled: Optional[bool]
     align: Optional[Literal["left", "center", "right"]]
     show_mimetype: Optional[bool]
+    show_tags: Optional[bool]
+    show_folder: Optional[bool]
     content: Optional[str]
     embed: Optional[bool]
     embed_title: Optional[str]
     embed_description: Optional[str]
-    embed_color: Optional[str]
+    embed_color: Optional[Color]
     embed_site_name: Optional[str]
 
     @classmethod
@@ -2095,13 +2111,46 @@ class UserViewSettings:
             data.get("enabled"),
             data.get("align"),
             data.get("showMimetype"),
+            data.get("showTags"),
+            data.get("showFolder"),
             data.get("content"),
             data.get("embed"),
             data.get("embedTitle"),
             data.get("embedDescription"),
-            data.get("embedColor"),
+            Color.from_str(data["embedColor"]) if "embedColor" in data else None,
             data.get("embedSiteName"),
         )
+
+    def _to_payload(self) -> JSON:
+        ret = dict()
+
+        if self.enabled is not None:
+            ret["enabled"] = self.enabled
+        if self.align is not None:
+            ret["align"] = self.align
+        if self.show_mimetype is not None:
+            ret["showMimetype"] = self.show_mimetype
+        if self.show_tags is not None:
+            ret["showTags"] = self.show_tags
+        if self.show_folder is not None:
+            ret["showFolder"] = self.show_folder
+        if self.content is not None:
+            ret["content"] = self.content
+        if self.embed is not None:
+            ret["embed"] = self.embed
+        if self.embed_title is not None:
+            ret["embedTitle"] = self.embed_title
+        if self.embed_description is not None:
+            ret["embedDescription"] = self.embed_description
+        if self.embed_color is not None:
+            ret["embedColor"] = self.embed_color.to_hex()
+        if self.embed_site_name is not None:
+            ret["embedSiteName"] = self.embed_site_name
+
+        if len(ret) == 0:
+            raise ValueError("resulting payload is empty.")
+
+        return ret
 
 
 @dataclass

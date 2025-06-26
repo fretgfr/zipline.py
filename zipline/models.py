@@ -28,7 +28,7 @@ import io
 import mimetypes
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Sequence, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Union
 
 from .color import Color
 from .enums import FileSearchField, FileSearchSort, OAuthProviderType, Order, QuotaType, RecentFilesFilter, UserRole

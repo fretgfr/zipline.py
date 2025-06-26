@@ -1925,8 +1925,8 @@ class UserPasskey:
         When this passkey was last used.
     name: :class:`str`
         The name of this passkey.
-    reg: :class:`dict`
-        Additional information about this passkey.
+    reg: JSON
+        A JSON-compatible :class:`dict` containing the WebAuthn credential registration response.
     user_id: :class:`str`
         The id of the :class:`~zipline.models.User` that this passkey belongs to.
     """

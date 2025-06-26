@@ -118,6 +118,7 @@ class Color:
         Construct a Color from a given string.
 
         Supported formats:
+
         - RGB: ```rgb(rrr, ggg, bbb)```
         - HSV: ``hsv(hh, 0.s, 0.v)``
         - Hex: ``#rrggbb`` or ``#rgb``
@@ -134,7 +135,7 @@ class Color:
 
         Raises
         ------
-        ValueError
+        :class:`ValueError`
             Input string does not match supported formats.
         """
         match_ = COLOR_REGEX.search(value)

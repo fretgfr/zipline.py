@@ -159,10 +159,10 @@ class Client:
 
         Raises
         ------
-        BadRequest
-            Something went wrong handling the request.
-        Forbidden
-            You are not an administrator and cannot use this method.
+        :class:`~zipline.errors.BadRequest`
+            Missing required fields.
+        :class:`~zipline.errors.Forbidden`
+            You do not have permission to use this endpoint.
         """
         json = {"username": username, "password": password, "role": role.value}
 
@@ -190,9 +190,7 @@ class Client:
 
         Raises
         ------
-        Forbidden
-            You are not an administrator and cannot use this method.
-        NotFound
+        :class:`~zipline.errors.NotFound`
             A user with that id could not be found
         """
         r = Route("GET", f"/api/users/{id}")
@@ -211,7 +209,7 @@ class Client:
 
         Raises
         ------
-        Forbidden
+        :class:`~zipline.errors.Forbidden`
             You are not an administrator and cannot use this method.
         """
         r = Route("GET", "/api/users")
@@ -237,9 +235,7 @@ class Client:
 
         Raises
         ------
-        BadRequest
-            Something went wrong handling the request.
-        Forbidden
+        :class:`~zipline.errors.Forbidden`
             You are not an administrator and cannot use this method.
         """
         payload = {"delete": remove_data}
@@ -260,13 +256,6 @@ class Client:
         -------
         List[:class:`~zipline.models.Invite`]
             The invites on the server.
-
-        Raises
-        ------
-        BadRequest
-            Something went wrong handling this request.
-        Forbidden
-            You are not an administrator and do not have permission to access this resource.
         """
         r = Route("GET", "/api/auth/invites")
         data = await self.http.request(r)
@@ -311,14 +300,10 @@ class Client:
 
         Raises
         ------
-        ValueError
+        :class:`ValueError`
             An invalid argument was passed.
-        ZiplineError
-            The server returned the invites in an unexpected format.
-        BadRequest
-            The server could not process the request.
-        Forbidden
-            You are not an administrator and cannot use this method.
+        :class:`~zipline.errors.BadRequest`
+            Provided arguments are invalid.
         """
         if max_uses and not max_uses >= 1:
             raise ValueError("max_uses must be greater than or equal to 1.")
@@ -355,10 +340,8 @@ class Client:
 
         Raises
         ------
-        Forbidden
-            You are not an administrator and cannot use this method.
-        NotFound
-            No invite was found with the provided id.
+        :class:`~zipline.errors.NotFound`
+            The id given was invalid or no longer exists.
         """
         r = Route("DELETE", f"/api/auth/invites/{id}")
         data = await self.http.request(r)
@@ -415,8 +398,8 @@ class Client:
 
         Raises
         ------
-        BadRequest
-            The server could not process the request.
+        :class:`~zipline.errors.BadRequest`
+            Folder name is missing or invalid. Invalid file(s) or id(s) provided.
         """
         payload = {"name": name, "isPublic": public}
 
@@ -445,9 +428,7 @@ class Client:
 
         Raises
         ------
-        Forbidden
-            You do not have access to the folder requested.
-        NotFound
+        :class:`~zipline.errors.NotFound`
             A folder with that id could not be found.
         """
         r = Route("GET", f"/api/user/folders/{id}")
@@ -543,10 +524,12 @@ class Client:
 
         Raises
         ------
-        ValueError
+        :class:`ValueError`
             Invalid value for max views passed.
-        BadRequest
-            The server could not process your request.
+        :class:`~zipline.errors.BadRequest`
+            Vanity url already taken, max view invalid, destination is missing.
+        :class:`~zipline.errors.Forbidden`
+            Creating the URL would exceed your assigned quota.
         """
         if max_views is not None and max_views < 0:
             raise ValueError("max_views must be greater than or equal to 0")
@@ -585,10 +568,8 @@ class Client:
 
         Raises
         ------
-        Forbidden
-            You do not have access to this url.
-        NotFound
-            A url with that id could not be found.
+        :class:`~zipline.errors.NotFound`
+            A url with the given id could not be found.
         """
         r = Route("DELETE", f"/api/user/urls/{id}")
         data = await self.http.request(r)
@@ -625,10 +606,8 @@ class Client:
 
         Raises
         ------
-        NotFound
-            A tag with that id was not found.
-        Forbidden
-            You do not have access to this tag.
+        :class:`~zipline.errors.NotFound`
+            A tag with the given id does not exist.
         """
         r = Route("GET", f"/api/user/tags/{id}")
         data = await self.http.request(r)
@@ -652,6 +631,11 @@ class Client:
         -------
         :class:`~zipline.models.Tag`
             The newly created tag.
+
+        Raises
+        ------
+        :class:`~zipline.errors.BadRequest`
+            A tag with this name already exists.
         """
         color = color or Color.default()
 
@@ -681,10 +665,8 @@ class Client:
 
         Raises
         ------
-        Forbidden
-            You do not have access to this url.
-        NotFound
-            A url with that id could not be found.
+        :class:`~zipline.errors.NotFound`
+            A tag with the given id could not be found.
         """
         r = Route("DELETE", f"/api/user/tags/{id}")
         data = await self.http.request(r)
@@ -729,6 +711,11 @@ class Client:
         -------
         :class:`~zipline.models.UserFilesResponse`
             The requested search results.
+
+        Raises
+        ------
+        :class:`~zipline.errors.BadRequest`
+            ``page`` or ``per_page`` are missing or invalid. ``sort_by``, ``order`` or ``search_field/search_query`` were invalid.
         """
         params = {"sortBy": sort_by.value, "order": order.value}
 
@@ -850,7 +837,9 @@ class Client:
 
         Raises
         ------
-        ValueError
+        :class:`ValueError`
+            An invalid amount was passed.
+        :class:`~zipline.errors.BadRequest`
             An invalid amount was passed.
         """
         if amount < 0:
@@ -879,6 +868,11 @@ class Client:
         -------
         :class:`int`
             The number of deleted files.
+
+        Raises
+        ------
+        :class:`~zipline.errors.BadRequest`
+            Invalid file(s) or id(s) provided.
         """
         json = {
             "files": [file.id if isinstance(file, File) else file for file in files],
@@ -912,6 +906,13 @@ class Client:
         -------
         :class:`int`
             The number of updated files.
+
+        Raises
+        ------
+        :class:`~zipline.errors.BadRequest`
+            Invalid file(s) or id(s) provided.
+        :class:`~zipline.errors.NotFound`
+            Specified files do not exist.
         """
         json = {
             "files": [file.id if isinstance(file, File) else file for file in files],
@@ -1037,16 +1038,18 @@ class Client:
 
         Raises
         ------
-        ValueError
-            compression_percent was not in 0 <= compression_percent <= 100.
-        ValueError
-            max_views passed was less than 0.
-        ValueError
-            The type of the object passed to the folder parameter was incorrect.
-        BadRequest
-            Server could not process the request.
-        ServerError
-            The server responded with a 5xx error code.
+        :class:`ValueError`
+            ``compression_percent`` was not in ``0 <= compression_percent <= 100``. ``max_views`` was less than 0.
+
+            Type of ``folder`` is invalid.
+        :class:`~zipline.errors.BadRequest`
+            Provided folder does not exist.
+        :class:`~zipline.errors.Forbidden`
+            Folder upload not allowed for anonymous user.
+        :class:`~zipline.errors.PayloadTooLarge`
+            Processing this upload would exceed the quota assigned to the currently authenticated user.
+        :class:`~zipline.errors.ServerError`
+            An unexpected error occurred while processing the upload.
         """
         if compression_percent < 0 or compression_percent > 100:
             raise ValueError("compression_percent must be between 0 and 100")

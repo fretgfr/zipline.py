@@ -85,6 +85,12 @@ class NotFound(HTTPError):
     pass
 
 
+class PayloadTooLarge(HTTPError):
+    """Server returned a 413 response."""
+
+    pass
+
+
 class RateLimited(HTTPError):
     """Server returned a 429 response."""
 

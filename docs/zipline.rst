@@ -181,6 +181,10 @@ zipline.errors module
    :members:
    :show-inheritance:
 
+.. autoclass:: zipline.errors.PayloadTooLarge
+   :members:
+   :show-inheritance:
+
 .. autoclass:: zipline.errors.RateLimited
    :members:
    :show-inheritance:

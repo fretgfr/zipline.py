@@ -29,7 +29,17 @@ from typing import Any, Dict, Literal, Optional, Union
 import aiohttp
 from yarl import URL
 
-from .errors import BadRequest, Forbidden, NotAuthenticated, NotFound, RateLimited, ServerError, UnhandledError, ZiplineError
+from .errors import (
+    BadRequest,
+    Forbidden,
+    NotAuthenticated,
+    NotFound,
+    PayloadTooLarge,
+    RateLimited,
+    ServerError,
+    UnhandledError,
+    ZiplineError,
+)
 from .meta import __version__
 
 HTTP_METHOD = Literal["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "TRACE", "CONNECT", "OPTIONS"]
@@ -131,6 +141,8 @@ class HTTPClient:
                 raise Forbidden(error, status)
             elif status == 404:
                 raise NotFound(error, status)
+            elif status == 413:
+                raise PayloadTooLarge(error, status)
             elif status == 429:
                 raise RateLimited(error, status)
             elif 405 <= status < 500:

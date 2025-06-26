@@ -231,6 +231,13 @@ class File:
         -------
         :class:`bytes`
             The content of this file.
+
+        Raises
+        ------
+        :class:`~zipline.errors.Forbidden`
+            Provided password is incorrect.
+        :class:`~zipline.errors.NotFound`
+            This file no longer exists or does not have a password.
         """
         params = {"pw": password}
         r = Route("GET", self.full_url)
@@ -245,6 +252,11 @@ class File:
         -------
         :class:`~zipline.models.File`
             A new instance with the latest information about this file.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            This file no longer exists.
         """
         r = Route("GET", f"/api/user/files/{self.id}")
         data = await self._http.request(r)
@@ -259,6 +271,11 @@ class File:
         -------
         :class:`~zipline.models.File`
             A new instance with the latest information about this file.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            This file no longer exists.
         """
         r = Route("DELETE", f"/api/user/files/{self.id}")
         data = await self._http.request(r)
@@ -301,6 +318,13 @@ class File:
         -------
         :class:`~zipline.models.File`
             The updated file.
+
+        Raises
+        ------
+        :class:`~zipline.errors.BadRequest`
+            Required fields missing or invalid, numeric fields are invalid, or tags provided are invalid or no longer exist.
+        :class:`~zipline.errors.NotFound`
+            This file no longer exists.
         """
         payload = {}
 
@@ -333,8 +357,10 @@ class File:
 
         Raises
         ------
-        ValueError
+        :class:`ValueError`
             The file is already favorited.
+        :class:`~zipline.errors.NotFound`
+            This file no longer exists.
         """
         if self.favorite:
             raise ValueError("this file is already favorited.")
@@ -378,8 +404,10 @@ class File:
 
         Raises
         ------
-        ValueError
+        :class:`ValueError`
             The tag is already applied to this file.
+        :class:`~zipline.errors.NotFound`
+            This file no longer exists or the provided tag could not be found.
         """
 
         tags = self.tags or []
@@ -425,8 +453,10 @@ class File:
 
         Raises
         ------
-        ValueError
+        :class:`ValueError`
             The file does not have the given tag.
+        :class:`~zipline.errors.NotFound`
+            This file no longer exists or the tag provided does not exist.
         """
 
         tags = self.tags or []
@@ -450,8 +480,8 @@ class File:
 
         Raises
         ------
-        ValueError
-            The file is already favorited.
+        :class:`ValueError`
+            The file is already not favorited.
         """
         if not self.favorite:
             raise ValueError("this file is already not favorited.")
@@ -465,6 +495,13 @@ class File:
         """|coro|
 
         Remove this file from it's current :class:`~zipline.models.Folder`.
+
+        Raises
+        ------
+        :class:`~zipline.errors.BadRequest`
+            This file is not in a folder.
+        :class:`~zipline.errors.NotFound`
+            This file no longer exists.
         """
         payload = {"delete": "file", "id": self.id}
         r = Route("DELETE", f"/api/user/folders/{self.folder_id}")
@@ -563,6 +600,11 @@ class Folder:
         -------
         :class:`~zipline.models.Folder`
             A new instance with the latest information about this folder.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            This folder no longer exists.
         """
         r = Route("GET", f"/api/user/folders/{self.id}")
         data = await self._http.request(r)
@@ -577,6 +619,11 @@ class Folder:
         -------
         :class:`~zipline.models.Folder`
             A new instance with the latest information about this folder.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            This folder no longer exists.
         """
         payload = {"delete": "folder"}
         r = Route("DELETE", f"/api/user/folders/{self.id}")
@@ -597,6 +644,11 @@ class Folder:
         -------
         :class:`~zipline.models.Folder`
             The updated folder.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            This folder no longer exists.
         """
         payload = {"name": name}
         r = Route("PATCH", f"/api/user/folders/{self.id}")
@@ -617,6 +669,15 @@ class Folder:
         -------
         :class:`~zipline.models.Folder`
             A new instance with the latest information about this folder.
+
+        Raises
+        ------
+        :class:`~zipline.errors.BadRequest`
+            Provided file not in folder.
+        :class:`~zipline.errors.NotFound`
+            This folder no longer exists or the provided file no longer exists.
+        :class:`~zipline.errors.Forbidden`
+            The authenticated user does not own the provided file or does not own this folder.
         """
         payload = {
             "delete": "file",
@@ -641,6 +702,11 @@ class Folder:
         -------
         :class:`~zipline.models.Folder`
             A new instance with the latest information about this folder.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            This folder no longer exists.
         """
         payload = {"id": file.id if isinstance(file, File) else file}
 
@@ -662,6 +728,14 @@ class Folder:
         -------
         :class:`~zipline.models.Folder`
             A new instance with the latest information about this folder.
+
+        Raises
+        ------
+        :class:`~zipline.errors.BadRequest`
+            Invalid file(s) or id(s) provided.
+        :class:`~zipline.errors.NotFound`
+            Any of the specified files do not exist, this folder no longer exists, or
+            this folder is not owned by the authenticated user.
         """
         file_ids = [file.id if isinstance(file, File) else file for file in files]
 
@@ -784,6 +858,11 @@ class User:
         -------
         :class:`~zipline.models.User`
             A new instance with the latest information about this user.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            This user no longer exists.
         """
         r = Route("GET", f"/api/users/{self.id}")
         data = await self._http.request(r)
@@ -819,6 +898,13 @@ class User:
         -------
         :class:`~zipline.models.User`
             The updated user.
+
+        Raises
+        ------
+        :class:`~zipline.errors.BadRequest`
+            Invalid fields, missing required quota properties, invalid role.
+        :class:`~zipline.errors.NotFound`
+            If the user with this ID no longer exists.
         """
         payload = {}
 
@@ -854,10 +940,10 @@ class User:
 
         Raises
         ------
-        BadRequest
-            Something went wrong handling the request.
-        Forbidden
-            You are not an administrator and cannot use this method.
+        :class:`~zipline.errors.Forbidden`
+            You cannot delete this user.
+        :class:`~zipline.errors.NotFound`
+            This user no longer exists.
         """
         payload = {"delete": remove_data}
         r = Route("DELETE", f"/api/users/{self.id}")
@@ -981,6 +1067,11 @@ class InviteUser:
         -------
         :class:`~zipline.models.User`
             The fully fledged user object.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            The user no longer exists.
         """
         r = Route("GET", f"/api/users/{self.id}")
         data = await self._http.request(r)
@@ -1081,6 +1172,11 @@ class Invite:
         -------
         :class:`~zipline.models.Invite`
             A new instance with the latest information about this invite.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            This invite no longer exists.
         """
         r = Route("DELETE", f"/api/auth/invites/{self.id}")
         data = await self._http.request(r)
@@ -1095,6 +1191,11 @@ class Invite:
         -------
         :class:`~zipline.models.Invite`
             A new instance with the latest information about this invite.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            This invite no longer exists.
         """
         r = Route("GET", f"/api/auth/invites/{self.id}")
         data = await self._http.request(r)
@@ -1130,6 +1231,11 @@ class TagFile:
         -------
         :class:`~zipline.models.File`
             The fully fledged file object.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            This file no longer exists.
         """
         r = Route("GET", f"/api/user/files/{self.id}")  # NOTE: Undocumented // Not officially used in the frontend.
         data = await self._http.request(r)
@@ -1214,6 +1320,13 @@ class Tag:
         -------
         :class:`~zipline.models.Tag`
             The updated tag.
+
+        Raises
+        ------
+        :class:`~zipline.errors.BadRequest`
+            New name provided is already taken.
+        :class:`~zipline.errors.NotFound`
+            This tag no longer exists.
         """
         payload = {}
 
@@ -1235,6 +1348,11 @@ class Tag:
         -------
         :class:`~zipline.models.Tag`
             A new instance with the latest information about this tag.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            This tag no longer exists or does not belong to the currently authenticated user.
         """
         r = Route("DELETE", f"/api/user/tags/{self.id}")
         data = await self._http.request(r)
@@ -1249,6 +1367,11 @@ class Tag:
         -------
         :class:`~zipline.models.Tag`
             A new instance with the latest information about this tag.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            This tag no longer exists.
         """
         r = Route("GET", f"/api/user/tags/{self.id}")
         data = await self._http.request(r)
@@ -1385,6 +1508,13 @@ class URL:
         -------
         :class:`~zipline.models.URL`
             The updated url.
+
+        Raises
+        ------
+        :class:`~zipline.errors.BadRequest`
+            ``vanity`` is already taken, ``max_views`` is invalid, or ``destination`` is invalid.
+        :class:`~zipline.errors.NotFound`
+            This URL no longer exists.
         """
         payload = {}
 
@@ -1412,6 +1542,11 @@ class URL:
         -------
         :class:`~zipline.models.URL`
             A new instance with the latest information about this url.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            This URL no longer exists.
         """
         r = Route("DELETE", f"/api/user/urls/{self.id}")
         data = await self._http.request(r)
@@ -1471,7 +1606,12 @@ class UploadFile:
         Returns
         -------
         :class:`~zipline.models.File`
-            The fully fledged object
+            The fully fledged file object.
+
+        Raises
+        ------
+        :class:`~zipline.errors.NotFound`
+            This file no longer exists.
         """
         r = Route("GET", f"/api/user/files/{self.id}")  # NOTE: Undocumented // Not officially used in the frontend.
         data = await self._http.request(r)
@@ -1540,9 +1680,9 @@ class FileData:
 
         Raises
         ------
-        ValueError
+        :class:`ValueError`
             An invalid value was passed to the data parameter.
-        TypeError
+        :class:`TypeError`
             The MIME type of the file could not be determined and was not provided.
         """
         if isinstance(data, io.IOBase):
@@ -1727,8 +1867,10 @@ class UserQuota:
 
         Raises
         ------
-        TypeError
-            The :attr:`Quota.user_id` is None and the user cannot be resolved.
+        :class:`TypeError`
+            The :attr:`Quota.user_id` is ``None`` and the user cannot be resolved.
+        :class:`~zipline.errors.NotFound`
+            The user associated with this quota no longer exists.
         """
         if self.user_id is None:
             raise TypeError("cannot resolve user with null id.")
@@ -2178,7 +2320,7 @@ class Avatar:
 
         Raises
         ------
-        ZiplineError
+        :class:`~zipline.errors.ZiplineError`
             MIME type is None.
         """
         if self.mime is None:

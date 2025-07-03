@@ -70,7 +70,7 @@ class Client:
                     ...
     """
 
-    __slots__ = ("server_url", "http", "zipline_domains")
+    __slots__ = ("server_url", "http")
 
     def __init__(self, server_url: str, token: str) -> None:
         """Creates a new client.

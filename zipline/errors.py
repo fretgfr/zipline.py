@@ -26,6 +26,7 @@ from typing import Any
 
 __all__ = (
     "ZiplineError",
+    "HTTPError",
     "UnhandledError",
     "BadRequest",
     "Forbidden",

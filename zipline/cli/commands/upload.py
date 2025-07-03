@@ -1,4 +1,5 @@
-from datetime import datetime
+import sys
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple, Union
 
 from rich import print
@@ -38,7 +39,7 @@ def _complete_format(incomplete: str) -> List[Union[Tuple[str, str], str]]:
 @app.command(name="upload")
 @sync
 async def upload(
-    file: FileBinaryRead = Argument(help="The path to the file you wish to upload."),
+    files: List[FileBinaryRead] = Argument(help="The path(s) to the file(s) you wish to upload."),
     server_url: str = Option(
         ...,
         "--server",
@@ -56,6 +57,18 @@ async def upload(
         prompt=True,
         hide_input=True,
     ),
+    print_object: bool = Option(
+        ...,
+        "--object/--text",
+        "-o/-O",
+        default_factory=sys.stdout.isatty,
+        help=(
+            "Choose how to format the output. "
+            "If --text (or piped), you'll get a link to the uploaded file; "
+            "if --object (or on a TTY), you'll get the raw Python object."
+        ),
+        envvar="ZIPLINE_PRINT_OBJECT",
+    ),
     format: Optional[NameFormat] = Option(
         None,
         "--format",
@@ -72,8 +85,12 @@ async def upload(
     expiry: Optional[datetime] = Option(
         None,
         "--expiry",
-        "-e",
-        help="Specify when this file should expire. When this time expires, the file will be deleted from the Zipline instance.",
+        "-E",
+        help=(
+            "Specify when this file should expire.\n"
+            "When this time expires, the file will be deleted from the Zipline instance.\n"
+            "This argument uses your system's local timezone, not UTC dates."
+        ),
     ),
     password: Optional[str] = Option(
         None,
@@ -96,11 +113,13 @@ async def upload(
     original_name: bool = Option(
         False,
         "--original-name/--generated-name",
-        "-o/-g",
+        "-G/-g",
         help="Specify whether the original name of the file should be preserved when downloading the file from Zipline.",
     ),
     folder: Optional[str] = Option(
         None,
+        "--folder",
+        "-F",
         help="Specify what folder the file should be added to after it is uploaded.",
     ),
     override_extension: Optional[str] = Option(
@@ -130,18 +149,26 @@ async def upload(
         transient=True,
     ) as progress:
         task = progress.add_task(description="Reading file...", total=None)
-        file_data = FileData(
-            data=file,
-            filename=override_name or file.name,
-        )
+        payload: list[FileData] = []
+        for file in files:
+            payload.append(
+                FileData(
+                    data=file,
+                    filename=override_name or file.name,
+                )
+            )
+
+        if expiry and not expiry.tzinfo:
+            local_tz = datetime.now().astimezone().tzinfo
+            expiry = expiry.replace(tzinfo=local_tz)
 
         progress.update(task, description="Uploading file...", total=None)
         async with Client(server_url, token) as client:
             try:
-                uploaded_file = await client.upload_file(
-                    payload=file_data,
+                upload = await client.upload_file(
+                    *payload,  # list[FileData]
                     compression_percent=compression_percent,
-                    expiry=expiry,
+                    expiry=expiry.astimezone(tz=timezone.utc) if expiry else None,
                     format=format,
                     password=password,
                     max_views=max_views,
@@ -150,9 +177,8 @@ async def upload(
                     folder=folder,
                     override_extension=override_extension,
                     override_domain=override_domain,
-                    text_only=True,
                 )
             except Exception as exception:
                 handle_api_errors(exception, server_url, traceback=verbose)
 
-        print(uploaded_file)
+        print(upload if print_object else " ".join(file.url for file in upload.files))

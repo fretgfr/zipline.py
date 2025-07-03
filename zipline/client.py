@@ -177,7 +177,7 @@ class Client:
     async def get_user(self, id: str, /) -> User:
         """|coro|
 
-        Retreive a user with given id.
+        Retrieve a user with given id.
 
         Parameters
         ----------
@@ -989,8 +989,7 @@ class Client:
     @overload
     async def upload_file(
         self,
-        payload: FileData,
-        *,
+        *payload: FileData,
         format: Optional[NameFormat] = ...,
         compression_percent: int = ...,
         expiry: Optional[Union[datetime.datetime, datetime.timedelta]] = ...,
@@ -1007,8 +1006,7 @@ class Client:
     @overload
     async def upload_file(
         self,
-        payload: FileData,
-        *,
+        *payload: FileData,
         format: Optional[NameFormat] = ...,
         compression_percent: int = ...,
         expiry: Optional[Union[datetime.datetime, datetime.timedelta]] = ...,
@@ -1024,8 +1022,7 @@ class Client:
 
     async def upload_file(
         self,
-        payload: FileData,
-        *,
+        *payload: FileData,
         format: Optional[NameFormat] = None,
         compression_percent: int = 0,
         expiry: Optional[Union[datetime.datetime, datetime.timedelta]] = None,
@@ -1044,8 +1041,12 @@ class Client:
 
         Parameters
         ----------
-        payload: :class:`~zipline.models.FileData`
+        payload: *:class:`~zipline.models.FileData`
             Data regarding the file to upload.
+
+            .. versionchanged:: 0.28.0
+
+                It is now possible to pass multiple :class:`~zipline.models.FileData` objects.
         format: Optional[:class:`~zipline.enums.NameFormat`]
             The format of the name to assign to the uploaded file, uses Zipline's configured name formatting by default.
 
@@ -1147,7 +1148,8 @@ class Client:
             headers["X-Zipline-No-Json"] = "true"
 
         formdata = aiohttp.FormData()
-        formdata.add_field("file", payload.data, filename=payload.filename, content_type=payload.mimetype)
+        for file in payload:
+            formdata.add_field("file", file.data, filename=file.filename, content_type=file.mimetype)
 
         r = Route("POST", "/api/upload")
         data = await self.http.request(r, headers=headers, data=formdata)

@@ -22,6 +22,7 @@ SOFTWARE.
 
 import base64
 import datetime
+from dataclasses import is_dataclass
 from itertools import islice
 from operator import attrgetter
 from typing import (
@@ -336,3 +337,45 @@ def guess_mimetype_by_magicnumber(data: bytes) -> Optional[str]:
 
 def key_valid_not_none(key: str, dict_: Dict[str, Any]) -> bool:
     return key in dict_ and dict_[key] is not None
+
+
+def is_dataclass_instance(obj) -> bool:
+    return is_dataclass(obj) and not isinstance(obj, type)
+
+
+_INVALID = object()
+
+
+def _element_to_json(val: Any):
+    if isinstance(val, (str, int, float, type(None), bool)):
+        return val
+
+    elif isinstance(val, datetime.datetime):
+        return val.isoformat()
+
+    elif isinstance(val, list):
+        return [_element_to_json(elem) for elem in val]
+
+    elif isinstance(val, dict):
+        return _normalize_dict(val)
+
+    elif is_dataclass_instance(val):
+        return slotted_dataclass_to_dict(val)
+
+    else:
+        return _INVALID
+
+
+def _normalize_dict(data: dict):
+    for key in list(data.keys()):
+        val = _element_to_json(data[key])
+        if val is _INVALID:
+            data.pop(key, None)
+        else:
+            data[key] = val
+
+
+def slotted_dataclass_to_dict(inst: Any) -> JSON:
+    ret = {name: getattr(inst, name) for name in dir(inst) if not name.startswith(("_", "__"))}
+    _normalize_dict(ret)
+    return ret

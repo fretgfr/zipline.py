@@ -31,8 +31,8 @@ The following environment variables are detected by the CLI, and will be used wh
 - ``ZIPLINE_TOKEN`` (string)
    - An authentication token to use for API requests.
 - ``ZIPLINE_PRINT_OBJECT`` (boolean)
-   - Determines whether or not to print the full Python object returned by the zipline.py client.
-   - Consider using the CLI arguments (usually ``--object`` or ``--text``) on specific commands to override this instead of a global environment variable, as the default behavior for commands using this changes depending on whether or not they are used in a TTY.
+   - Determines whether or not to print a json representation of the object returned by the zipline.py client.
+   - Consider using the CLI arguments (usually ``--json`` or ``--text``) on specific commands to override this instead of a global environment variable, as the default behavior for commands using this changes depending on whether or not they are used in a TTY.
 - ``ZIPLINE_VERBOSE`` (boolean)
    - Determines whether or not to print exception tracebacks when the application encounters an exception that it is meant to handle.
    - If the application encounters an unexpected exception, this option is ignored and the traceback will always be printed.

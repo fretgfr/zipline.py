@@ -47,6 +47,7 @@ __all__ = (
     "as_chunks",
     "get",
     "utcnow",
+    "slotted_dataclass_to_dict",
 )
 
 T = TypeVar("T")
@@ -376,6 +377,26 @@ def _normalize_dict(data: dict):
 
 
 def slotted_dataclass_to_dict(inst: Any) -> JSON:
+    """Recursively transforms a slotted dataclass instance into a json-like Python object.
+
+    Parameters
+    ----------
+    inst: Any
+        The class instance to convert.
+
+    Returns
+    -------
+    JSON
+        A json-like structure representing the given instance.
+
+    Raises
+    ------
+    TypeError
+        An invalid value was given for ``inst``.
+    """
+    if not is_dataclass_instance(inst):
+        raise TypeError("inst must be a dataclass instance.")
+
     ret = {name: getattr(inst, name) for name in dir(inst) if not name.startswith(("_", "__"))}
     _normalize_dict(ret)
     return ret

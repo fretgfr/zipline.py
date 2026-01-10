@@ -151,6 +151,8 @@ zipline.utils module
 
 .. autofunction:: zipline.utils.as_chunks
 
+.. autofunction:: zipline.utils.slotted_dataclass_to_dict
+
 
 zipline.errors module
 ---------------------

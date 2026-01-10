@@ -1,3 +1,4 @@
+import json
 import sys
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple, Union
@@ -11,6 +12,7 @@ from zipline.cli.sync import sync
 from zipline.client import Client
 from zipline.enums import NameFormat
 from zipline.models import FileData
+from zipline.utils import slotted_dataclass_to_dict
 
 app = Typer()
 
@@ -39,7 +41,7 @@ def _complete_format(incomplete: str) -> List[Union[Tuple[str, str], str]]:
 @app.command(name="upload")
 @sync
 async def upload(
-    files: List[FileBinaryRead] = Argument(help="The path(s) to the file(s) you wish to upload."),
+    files: List[FileBinaryRead] = Argument(help="The path of the files you wish to upload."),
     server_url: str = Option(
         ...,
         "--server",
@@ -59,13 +61,13 @@ async def upload(
     ),
     print_object: bool = Option(
         ...,
-        "--object/--text",
+        "--json/--text",
         "-o/-O",
         default_factory=sys.stdout.isatty,
         help=(
             "Choose how to format the output. "
             "If --text (or piped), you'll get a link to the uploaded file; "
-            "if --object (or on a TTY), you'll get the raw Python object."
+            "if --json (or on a TTY), you'll get a json object."
         ),
         envvar="ZIPLINE_PRINT_OBJECT",
     ),
@@ -165,7 +167,7 @@ async def upload(
         progress.update(task, description="Uploading file...", total=None)
         async with Client(server_url, token) as client:
             try:
-                upload = await client.upload_file(
+                upload_result = await client.upload_file(
                     *payload,  # list[FileData]
                     compression_percent=compression_percent,
                     expiry=expiry.astimezone(tz=timezone.utc) if expiry else None,
@@ -181,4 +183,11 @@ async def upload(
             except Exception as exception:
                 handle_api_errors(exception, server_url, traceback=verbose)
 
-        print(upload if print_object else " ".join(file.url for file in upload.files))
+        if print_object:
+            result = [slotted_dataclass_to_dict(file) for file in upload_result.files]
+            result_json = json.dumps(result, indent=2)
+
+            print(result_json)
+            return
+
+        print(" ".join(file.url for file in upload_result.files))

@@ -22,6 +22,7 @@ SOFTWARE.
 
 import base64
 import datetime
+from dataclasses import is_dataclass
 from itertools import islice
 from operator import attrgetter
 from typing import (
@@ -32,6 +33,7 @@ from typing import (
     Dict,
     Generator,
     Iterable,
+    List,
     Optional,
     Tuple,
     TypeVar,
@@ -50,6 +52,9 @@ __all__ = (
 T = TypeVar("T")
 _Iter = Union[Iterable[T], AsyncIterable[T]]
 Coro = Coroutine[Any, Any, T]
+
+_JSONPrimitive = Union[None, bool, str, float, int]
+JSON = Union[_JSONPrimitive, List["JSON"], Dict[str, "JSON"]]
 
 
 def parse_iso_timestamp(iso_str: str, /) -> datetime.datetime:
@@ -196,7 +201,7 @@ def safe_get(dict_: Dict[Any, Any], *keys: Any) -> Optional[Any]:
     Parameters
     ----------
     dict_: Dict[Any, Any]
-        The dictionary to get the key from
+        The dictionary to get the key from.
     keys: Any
         The keys to get from the dictionary. Processed in order.
 
@@ -228,7 +233,7 @@ def build_avatar_payload(mime: str, data: bytes) -> str:
     Returns
     -------
     str
-        The encoded data
+        The encoded data.
     """
     avatar_bytes_encoded = base64.b64encode(data).decode("ascii")
 
@@ -312,7 +317,7 @@ def guess_mimetype_by_magicnumber(data: bytes) -> Optional[str]:
     """
     if data[0:3] == b"\xff\xd8\xff" or data[6:10] in (b"JFIF", b"Exif"):
         return "image/jpeg"
-    elif data.startswith(b"\x89\x50\x4E\x47\x0D\x0A\x1A\x0A"):
+    elif data.startswith(b"\x89\x50\x4e\x47\x0d\x0a\x1a\x0a"):
         return "image/png"
     elif data.startswith(b"RIFF") and data[8:12] == b"WEBP":
         return "image/webp"
@@ -332,3 +337,45 @@ def guess_mimetype_by_magicnumber(data: bytes) -> Optional[str]:
 
 def key_valid_not_none(key: str, dict_: Dict[str, Any]) -> bool:
     return key in dict_ and dict_[key] is not None
+
+
+def is_dataclass_instance(obj) -> bool:
+    return is_dataclass(obj) and not isinstance(obj, type)
+
+
+_INVALID = object()
+
+
+def _element_to_json(val: Any):
+    if isinstance(val, (str, int, float, type(None), bool)):
+        return val
+
+    elif isinstance(val, datetime.datetime):
+        return val.isoformat()
+
+    elif isinstance(val, list):
+        return [_element_to_json(elem) for elem in val]
+
+    elif isinstance(val, dict):
+        return _normalize_dict(val)
+
+    elif is_dataclass_instance(val):
+        return slotted_dataclass_to_dict(val)
+
+    else:
+        return _INVALID
+
+
+def _normalize_dict(data: dict):
+    for key in list(data.keys()):
+        val = _element_to_json(data[key])
+        if val is _INVALID:
+            data.pop(key, None)
+        else:
+            data[key] = val
+
+
+def slotted_dataclass_to_dict(inst: Any) -> JSON:
+    ret = {name: getattr(inst, name) for name in dir(inst) if not name.startswith(("_", "__"))}
+    _normalize_dict(ret)
+    return ret

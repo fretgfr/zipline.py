@@ -1,3 +1,4 @@
+import json
 import sys
 from typing import Optional
 
@@ -8,6 +9,7 @@ from typer import Argument, Option, Typer
 from zipline.cli.commands._handling import handle_api_errors
 from zipline.cli.sync import sync
 from zipline.client import Client
+from zipline.utils import slotted_dataclass_to_dict
 
 app = Typer()
 
@@ -33,15 +35,15 @@ async def shorten(
         prompt=True,
         hide_input=True,
     ),
-    print_object: bool = Option(
+    return_object: bool = Option(
         ...,
-        "--object/--text",
+        "--json/--text",
         "-o/-O",
         default_factory=sys.stdout.isatty,
         help=(
             "Choose how to format the output. "
             "If --text (or piped), you'll get the shortened URL; "
-            "if --object (or on a TTY), you'll get the raw Python object."
+            "if --json (or on a TTY), you'll get a json string."
         ),
         envvar="ZIPLINE_PRINT_OBJECT",
     ),
@@ -91,6 +93,9 @@ async def shorten(
             except Exception as exception:
                 handle_api_errors(exception, server_url, traceback=verbose)
 
-    if print_object:
-        print(shortened_url)
+    if return_object:
+        result_json = json.dumps(slotted_dataclass_to_dict(shortened_url), indent=2)
+        print(result_json)
+        return
+
     print(shortened_url.full_url)

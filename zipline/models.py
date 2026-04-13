@@ -2167,7 +2167,7 @@ class ServerVersionInfo:
     latest_tag: :class:`str`
         The latest version tag available.
     latest_url: :class:`str`
-        The Github link to the latest version tag available.
+        The GitHub link to the latest version tag available.
     latest_commit: Optional[Dict[:class:`str`, Union[:class:`str`, :class:`bool`]]]
         Information about the latest commit. Only available if the server is running an upstream version.
         Available keys are: ``sha``, ``url``, ``pull``.
@@ -2182,11 +2182,13 @@ class ServerVersionInfo:
     version_sha: :class:`str`
         The SHA of the version the server is running.
     version_url: :class:`str`
-        The Github link to the current versions commit on Github.
+        The GitHub link to the current versions commit on GitHub.
     details_version: :class:`str`
         The version currently being run.
     details_sha: :class:`str`
         The SHA of the version currently being run.
+    cached: Optional[:class:`bool`]
+        Whether the version information retrieved was from the instance cache.
     """
 
     __slots__ = (
@@ -2214,21 +2216,24 @@ class ServerVersionInfo:
     version_url: str
     details_version: str
     details_sha: str
+    cached: Optional[bool]
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /) -> ServerVersionInfo:
+
         return cls(
-            data["latest"]["tag"],
-            data["latest"]["url"],
-            safe_get(data, "latest", "commit"),
-            data["is_upstream"],
-            data["is_release"],
-            data["is_latest"],
-            data["version"]["tag"],
-            data["version"]["sha"],
-            data["version"]["url"],
+            data["data"]["latest"]["tag"],  #
+            data["data"]["latest"]["url"],  #
+            safe_get(data, "data", "latest", "commit"),
+            data["data"]["is_upstream"],
+            data["data"]["is_release"],
+            data["data"]["is_latest"],
+            data["data"]["version"]["tag"],
+            data["data"]["version"]["sha"],
+            data["data"]["version"]["url"],
             data["details"]["version"],
             data["details"]["sha"],
+            safe_get(data, "cached"),
         )
 
     @property

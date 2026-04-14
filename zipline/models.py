@@ -2203,6 +2203,7 @@ class ServerVersionInfo:
         "version_url",
         "details_version",
         "details_sha",
+        "cached",
     )
 
     latest_tag: str

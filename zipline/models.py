@@ -2220,14 +2220,34 @@ class ServerVersionInfo:
 
     @classmethod
     def _from_data(cls, data: Dict[str, Any], /) -> ServerVersionInfo:
-
+# {
+#   "data": {
+#     "isUpstream": false,
+#     "isRelease": true,
+#     "isLatest": true,
+#     "version": {
+#       "tag": "v4.5.3",
+#       "sha": "f0bcb4a0190e57c01fceb45429817b92103e0866",
+#       "url": "https://github.com/diced/zipline/releases/v4.5.3"
+#     },
+#     "latest": {
+#       "tag": "v4.5.3",
+#       "url": "https://github.com/diced/zipline/releases/v4.5.3"
+#     }
+#   },
+#   "details": {
+#     "version": "4.5.3",
+#     "sha": "f0bcb4a"
+#   },
+#   "cached": true
+# }
         return cls(
             data["data"]["latest"]["tag"],  #
             data["data"]["latest"]["url"],  #
             safe_get(data, "data", "latest", "commit"),
-            data["data"]["is_upstream"],
-            data["data"]["is_release"],
-            data["data"]["is_latest"],
+            data["data"]["isUpstream"],
+            data["data"]["isRelease"],
+            data["data"]["isLatest"],
             data["data"]["version"]["tag"],
             data["data"]["version"]["sha"],
             data["data"]["version"]["url"],
